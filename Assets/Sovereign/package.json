@@ -9,7 +9,6 @@
     "changelogUrl": "https://github.com/Kicory/daylight-sovereign",
     "licensesUrl": "https://github.com/Kicory/daylight-sovereign",
     "dependencies": {
-      "com.[company-name].some-package": "1.0.0"
    },
    "keywords": [
       "daylight"

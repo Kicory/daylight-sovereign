@@ -1,7 +1,13 @@
 {
     "name": "NoFS.DayLight.Sovereign",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "GUID:f7c5b88a39394314e874750ef4655131",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:d60799ab2a985554ea1a39cd38695018",
+        "GUID:4307f53044263cf4b835bd812fc161a4",
+        "GUID:776d03a35f1b52c4a9aed9f56d7b4229"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

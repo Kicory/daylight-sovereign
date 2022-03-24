@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
+﻿using Cysharp.Threading.Tasks;
+using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.Rendering.PostProcessing;
 
 namespace NoFS.DayLight.Sovereign {
 
+   [ExecuteAlways]
    public class SvrnMaster : MonoBehaviour {
 
       /// <summary>
@@ -14,36 +15,42 @@ namespace NoFS.DayLight.Sovereign {
 
       public static Vector2 fieldSize => (inst.transform as RectTransform)?.rect.size ?? Vector2.zero;
 
-      [SerializeField]
-      public SvrnBoard board;
-      [SerializeField]
-      private GameObject meshManagerPrefab;
-      [SerializeField]
-      public PostProcessVolume postProcessing;
+      public PostProcessVolume PPV => camera.postProcessVolume;
 
-      private HashSet<GameObject> meshDrawers = new HashSet<GameObject>();
+      public SvrnBoard board { get; private set; }
+      new public SvrnCam camera { get; private set; }
+
+#if UNITY_EDITOR
+      [InfoBox("Svrn 전용 레이어 설정 (필수!!)"), HorizontalLine, SerializeField, Layer, OnValueChanged("updateLayer")]
+      private string svrnLayer;
+#endif
 
       public MeshManager getMeshManagerInstance() {
-         GameObject obj = Instantiate(meshManagerPrefab, board.rtf, false);
-         this.meshDrawers.Add(obj);
-         return obj.GetComponent<MeshManager>();
+         GameObject meshMangerObject = board.addMeshManagerObject();
+         return meshMangerObject.GetComponent<MeshManager>();
       }
 
       public TSetting getPPSetting<TSetting>() where TSetting : PostProcessEffectSettings {
-         return postProcessing?.profile.GetSetting<TSetting>() ?? null;
+         return PPV?.profile.GetSetting<TSetting>() ?? null;
       }
 
       public async UniTask<SvrnResult> startSvrn(SvrnInstance inst) {
          var result = await inst.svrnSequence(master: this);
-         cleanUpBoard();
+         board.cleanUpBoard();
          return result;
       }
 
-      private void cleanUpBoard() {
-         foreach (GameObject obj in meshDrawers) {
-            Destroy(obj);
-         }
-         meshDrawers.Clear();
+      private void Awake() {
+         board = GetComponentInChildren<SvrnBoard>();
+         camera = GetComponentInChildren<SvrnCam>();
       }
+
+#if UNITY_EDITOR
+      public void updateLayer() {
+         gameObject.layer = LayerMask.NameToLayer(svrnLayer);
+         camera.setLayer(svrnLayer);
+         board.setLayer(svrnLayer);
+      }
+#endif
    }
 }

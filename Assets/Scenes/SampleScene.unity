@@ -343,37 +343,9 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 1246343760187853005, guid: 6c938701edeb20a43bd34fc3bbc72501, type: 3}
-      propertyPath: m_Layer
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2908813052409819262, guid: 6c938701edeb20a43bd34fc3bbc72501, type: 3}
-      propertyPath: sharedProfile
-      value: 
-      objectReference: {fileID: 11400000, guid: 17c2b86c42d0c2d4c837a72f64199a31, type: 2}
-    - target: {fileID: 3687710250989221519, guid: 6c938701edeb20a43bd34fc3bbc72501, type: 3}
-      propertyPath: m_Layer
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6297594541724792763, guid: 6c938701edeb20a43bd34fc3bbc72501, type: 3}
-      propertyPath: m_Layer
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6297594542067009570, guid: 6c938701edeb20a43bd34fc3bbc72501, type: 3}
-      propertyPath: m_Layer
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6297594542909073442, guid: 6c938701edeb20a43bd34fc3bbc72501, type: 3}
-      propertyPath: m_Layer
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 6297594542994334617, guid: 6c938701edeb20a43bd34fc3bbc72501, type: 3}
       propertyPath: m_Name
       value: SvrnMaster
-      objectReference: {fileID: 0}
-    - target: {fileID: 6297594543317052504, guid: 6c938701edeb20a43bd34fc3bbc72501, type: 3}
-      propertyPath: m_Layer
-      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6c938701edeb20a43bd34fc3bbc72501, type: 3}

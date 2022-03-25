@@ -2,6 +2,7 @@
 using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.Rendering.PostProcessing;
+using UnityEngine.UI;
 
 namespace NoFS.DayLight.Sovereign {
 
@@ -27,7 +28,8 @@ namespace NoFS.DayLight.Sovereign {
       private RenderTexture svrnTargetTexture;
 
       [ShowNativeProperty]
-      private RenderTexture svrnTargetTextureShower => camera.camera.targetTexture;
+      // ExecuteAlways 라도 인스펙터에서 한 번 안 보이면 Awake가 실행이 안 되므로 null인 경우가 있다.
+      private RenderTexture svrnTargetTextureShower => camera?.camera?.targetTexture ?? null;
 #endif
 
       public MeshManager getMeshManagerInstance() {
@@ -52,18 +54,25 @@ namespace NoFS.DayLight.Sovereign {
 
 #if UNITY_EDITOR
       public void updateLayer() {
-         if (UnityEditor.PrefabUtility.IsPartOfImmutablePrefab(gameObject) == false){
-            gameObject.layer = LayerMask.NameToLayer(svrnLayer);
-            camera.setLayer(svrnLayer);
-            board.setLayer(svrnLayer);
-            UnityEditor.PrefabUtility.ApplyPrefabInstance(this.gameObject, UnityEditor.InteractionMode.AutomatedAction);
+         try {
+            if (UnityEditor.PrefabUtility.IsPartOfImmutablePrefab(gameObject) == false) {
+               gameObject.layer = LayerMask.NameToLayer(svrnLayer);
+               camera.setLayer(svrnLayer);
+               board.setLayer(svrnLayer);
+               UnityEditor.PrefabUtility.ApplyPrefabInstance(this.gameObject, UnityEditor.InteractionMode.AutomatedAction);
+            }
          }
+         catch (System.ArgumentException) { }
       }
       public void updateRenderTexture() {
-         if (UnityEditor.PrefabUtility.IsPartOfImmutablePrefab(gameObject) == false) {
-            camera.camera.targetTexture = svrnTargetTexture;
-            UnityEditor.PrefabUtility.ApplyPrefabInstance(this.gameObject, UnityEditor.InteractionMode.AutomatedAction);
+         try {
+            if (UnityEditor.PrefabUtility.IsPartOfImmutablePrefab(gameObject) == false) {
+               camera.camera.targetTexture = svrnTargetTexture;
+               GetComponentInChildren<RawImage>().texture = svrnTargetTexture;
+               UnityEditor.PrefabUtility.ApplyPrefabInstance(this.gameObject, UnityEditor.InteractionMode.AutomatedAction);
+            }
          }
+         catch (System.ArgumentException) { }
       }
 #endif
    }

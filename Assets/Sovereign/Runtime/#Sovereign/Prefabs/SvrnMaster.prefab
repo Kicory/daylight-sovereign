@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2935100325735378951}
   - component: {fileID: 5076415680606020553}
-  m_Layer: 31
+  m_Layer: 0
   m_Name: SvrnVC
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -142,7 +142,7 @@ GameObject:
   - component: {fileID: 993868295552650718}
   - component: {fileID: 661774214725778415}
   - component: {fileID: 5836278980243902068}
-  m_Layer: 31
+  m_Layer: 0
   m_Name: SvrnCam
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -194,7 +194,7 @@ Camera:
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 2147483648
+    m_Bits: 1
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -238,7 +238,7 @@ MonoBehaviour:
   volumeTrigger: {fileID: 0}
   volumeLayer:
     serializedVersion: 2
-    m_Bits: 2147483648
+    m_Bits: 1
   stopNaNPropagation: 1
   finalBlitToCameraTarget: 1
   antialiasingMode: 0
@@ -386,7 +386,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1344c3c82d62a2a41a3576d8abb8e3ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Material: {fileID: 2100000, guid: 0568d1ff946f6654a82ade9629973e0a, type: 2}
+  m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -394,7 +394,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Texture: {fileID: 8400000, guid: d13f490b4790c4b4883ddc51190ace90, type: 2}
+  m_Texture: {fileID: 0}
   m_UVRect:
     serializedVersion: 2
     x: 0
@@ -411,7 +411,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6297594542909073443}
   - component: {fileID: 3381612960123116589}
-  m_Layer: 31
+  m_Layer: 0
   m_Name: SvrnBoard
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -461,7 +461,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1115220251668533417}
   - component: {fileID: 62673518170637359}
-  m_Layer: 31
+  m_Layer: 0
   m_Name: SvrnMaster
   m_TagString: SvrnMaster
   m_Icon: {fileID: 0}
@@ -487,7 +487,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 865, y: -2134}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 240, y: 135}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &62673518170637359
@@ -502,7 +502,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f1ebb15a33dc7374cbbf380c00916dc4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  svrnLayer: SvrnLayer
+  svrnLayer: Default
   svrnTargetTexture: {fileID: 0}
 --- !u!1 &6297594543317052504
 GameObject:

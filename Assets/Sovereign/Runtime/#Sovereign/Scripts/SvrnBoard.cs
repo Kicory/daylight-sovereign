@@ -37,7 +37,12 @@ namespace NoFS.DayLight.Sovereign {
 #if UNITY_EDITOR
       public void setLayer(string svrnLayer) {
          gameObject.layer = LayerMask.NameToLayer(svrnLayer);
-         meshManagerPrefab.layer = LayerMask.NameToLayer(svrnLayer);
+         if (meshManagerPrefab != null) {
+            meshManagerPrefab.layer = LayerMask.NameToLayer(svrnLayer);
+         }
+         else {
+            Debug.LogWarning($"{nameof(SvrnBoard)}에 {nameof(MeshManager)} 프리팹 넣어야 함.");
+         }
          foreach(Transform chgo in rtf) {
             chgo.gameObject.layer = LayerMask.NameToLayer(svrnLayer);
          }

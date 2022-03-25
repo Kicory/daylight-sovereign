@@ -7,6 +7,7 @@ using UnityEngine.UI;
 namespace NoFS.DayLight.Sovereign {
 
    [ExecuteAlways]
+   [AddComponentMenu("Sovereign/Sovereign Master")]
    public class SvrnMaster : MonoBehaviour {
 
       /// <summary>

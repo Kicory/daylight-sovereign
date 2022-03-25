@@ -9,7 +9,7 @@ using UnityEngine;
 using DH = NoFS.DayLight.Sovereign.DelaunatorHelper;
 
 namespace NoFS.DayLight.Sovereign.Sample {
-
+   [AddComponentMenu("Sovereign/Sample/Sovereign Sample Instance")]
    public class SampleInstance : SvrnInstance {
 
       [SerializeField, InfoBox("메시를 그릴 때 사용할 메티리얼, 갯수에 따라 subMeshCount도 정해진다")]

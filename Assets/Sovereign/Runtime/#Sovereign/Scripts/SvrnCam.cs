@@ -4,6 +4,7 @@ using UnityEngine.Rendering.PostProcessing;
 namespace NoFS.DayLight.Sovereign {
    [ExecuteAlways]
    [RequireComponent(typeof(Camera), typeof(PostProcessVolume), typeof(PostProcessLayer))]
+   [AddComponentMenu("Sovereign/Sovereign Camera")]
    public class SvrnCam : MonoBehaviour {
 
       new public Camera camera { get; private set; } = default;

@@ -6,6 +6,7 @@ using UnityEngine;
 namespace NoFS.DayLight.Sovereign {
 
    [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
+   [AddComponentMenu("Sovereign/Sovereign Mesh Manager")]
    public class MeshManager : MonoBehaviour {
       private MeshFilter meshHolder { get; set; } = default;
 

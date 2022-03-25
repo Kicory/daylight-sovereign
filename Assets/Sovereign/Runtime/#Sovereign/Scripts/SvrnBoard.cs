@@ -6,6 +6,7 @@ using RTF = UnityEngine.RectTransform;
 
 namespace NoFS.DayLight.Sovereign {
    [ExecuteAlways]
+   [AddComponentMenu("Sovereign/Sovereign Board")]
    public class SvrnBoard : MonoBehaviour {
 
       [SerializeField]

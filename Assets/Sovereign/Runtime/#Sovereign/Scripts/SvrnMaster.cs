@@ -50,6 +50,7 @@ namespace NoFS.DayLight.Sovereign {
          gameObject.layer = LayerMask.NameToLayer(svrnLayer);
          camera.setLayer(svrnLayer);
          board.setLayer(svrnLayer);
+         UnityEditor.PrefabUtility.ApplyPrefabInstance(this.gameObject, UnityEditor.InteractionMode.AutomatedAction);
       }
 #endif
    }

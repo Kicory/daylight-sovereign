@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2935100325735378951}
   - component: {fileID: 5076415680606020553}
-  m_Layer: 0
+  m_Layer: 31
   m_Name: SvrnVC
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -142,7 +142,7 @@ GameObject:
   - component: {fileID: 993868295552650718}
   - component: {fileID: 661774214725778415}
   - component: {fileID: 5836278980243902068}
-  m_Layer: 0
+  m_Layer: 31
   m_Name: SvrnCam
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -194,7 +194,7 @@ Camera:
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 2147483648
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 8400000, guid: d13f490b4790c4b4883ddc51190ace90, type: 2}
   m_TargetDisplay: 0
@@ -238,7 +238,7 @@ MonoBehaviour:
   volumeTrigger: {fileID: 0}
   volumeLayer:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 2147483648
   stopNaNPropagation: 1
   finalBlitToCameraTarget: 1
   antialiasingMode: 0
@@ -411,7 +411,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6297594542909073443}
   - component: {fileID: 3381612960123116589}
-  m_Layer: 0
+  m_Layer: 31
   m_Name: SvrnBoard
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -461,7 +461,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1115220251668533417}
   - component: {fileID: 62673518170637359}
-  m_Layer: 0
+  m_Layer: 31
   m_Name: SvrnMaster
   m_TagString: SvrnMaster
   m_Icon: {fileID: 0}
@@ -502,7 +502,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f1ebb15a33dc7374cbbf380c00916dc4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  svrnLayer: Default
+  svrnLayer: SvrnLayer
 --- !u!1 &6297594543317052504
 GameObject:
   m_ObjectHideFlags: 0

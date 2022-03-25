@@ -10,8 +10,10 @@ using DH = NoFS.DayLight.Sovereign.DelaunatorHelper;
 
 namespace NoFS.DayLight.Sovereign.Sample {
 
-   [AddComponentMenu("Sovereign/Sample/Sample Svrn Instance")]
    public class SampleInstance : SvrnInstance {
+
+      [SerializeField, InfoBox("메시를 그릴 때 사용할 메티리얼, 갯수에 따라 subMeshCount도 정해진다")]
+      protected Material[] materials;
 
       public override async UniTask<SvrnResult> svrnSequence(SvrnMaster master) {
 
@@ -22,7 +24,7 @@ namespace NoFS.DayLight.Sovereign.Sample {
          var token = cts.Token;
 
          var meshHelper = new MeshHelper();
-         var mesh = meshHelper.manager.prepareMeshPlaying(this.materials);
+         var mesh = meshHelper.manager.prepareMeshPlaying(materials);
 
          // Delaunator 사용할 거임.
          DH del = new DH(UniformPoissonDiskSampler.SampleRectangle(-Vector2.one * 5, SvrnMaster.fieldSize + Vector2.one * 5, 8).ToPoints());

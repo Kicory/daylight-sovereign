@@ -1,7 +1,7 @@
 ﻿namespace NoFS.DayLight.Sovereign {
    public class MeshHelper {
-      public MeshHelper() {
-         manager = SvrnMaster.inst.getMeshManagerInstance();
+      public MeshHelper(SvrnMaster master) {
+         manager = master.getMeshManagerInstance();
       }
 
       public readonly MeshManager manager;

@@ -8,30 +8,48 @@ namespace NoFS.DayLight.Sovereign {
 
    [ExecuteAlways]
    [AddComponentMenu("Sovereign/Sovereign Master")]
-   public class SvrnMaster : MonoBehaviour {
+   public partial class SvrnMaster : MonoBehaviour {
+
+      /// <summary>
+      /// 현재 Sovereign 상태
+      /// </summary>
+      public enum SvrnStatus { Idle = 0, Running = 10 }
 
       /// <summary>
       /// 씬에서 항상 하나뿐인 <see cref="SvrnMaster"/>.
       /// </summary>
-      public static SvrnMaster inst => GameObject.FindWithTag("SvrnMaster").GetComponent<SvrnMaster>();
+      private static SvrnMaster inst => GameObject.FindWithTag("SvrnMaster").GetComponent<SvrnMaster>();
 
-      public static Vector2 fieldSize => (inst.transform as RectTransform)?.rect.size ?? Vector2.zero;
+      public Vector2 fieldSize => (transform as RectTransform)?.rect.size ?? Vector2.zero;
+
+      public SvrnStatus status { get; private set; } = SvrnStatus.Idle;
+
+      public SvrnBoard board { get; private set; }
+
+      public new SvrnCam camera { get; private set; }
 
       public PostProcessVolume PPV => camera.postProcessVolume;
 
-      public SvrnBoard board { get; private set; }
-      new public SvrnCam camera { get; private set; }
+      public static async UniTask<SvrnResult> startSvrn(SvrnInstance svrnInst) {
+         return await inst.startSvrnInternal(svrnInst);
+      }
 
-#if UNITY_EDITOR
-      [InfoBox("Svrn 전용 레이어 설정 (필수!!)", EInfoBoxType.Error), HorizontalLine, SerializeField, Layer, OnValueChanged("updateLayer")]
-      private string svrnLayer;
-      [InfoBox("Svrn 전용 렌더 텍스쳐 설졍 (필수!!)", EInfoBoxType.Error), SerializeField, OnValueChanged("updateRenderTexture")]
-      private RenderTexture svrnTargetTexture;
-
-      [ShowNativeProperty]
-      // ExecuteAlways 라도 인스펙터에서 한 번 안 보이면 Awake가 실행이 안 되므로 null인 경우가 있다.
-      private RenderTexture svrnTargetTextureShower => camera?.camera?.targetTexture ?? null;
+      private async UniTask<SvrnResult> startSvrnInternal(SvrnInstance svrnInst) {
+         if (status != SvrnStatus.Idle) {
+#if INDEV
+            Debug.LogWarning($"{svrnInst.gameObject.name}가 기존 SVRN 이 진행되는 동안 새로운 SVRN을 시작하려 함.");
 #endif
+            return new SvrnResult() {
+               resultType = SvrnResult.SvrnResultType.Aborted
+            };
+         }
+         status = SvrnStatus.Running;
+         board.cleanUpBoard();
+         var result = await svrnInst.svrnSequence(master: this);
+         board.cleanUpBoard();
+         status = SvrnStatus.Idle;
+         return result;
+      }
 
       public MeshManager getMeshManagerInstance() {
          GameObject meshMangerObject = board.addMeshManagerObject();
@@ -42,18 +60,25 @@ namespace NoFS.DayLight.Sovereign {
          return PPV?.profile.GetSetting<TSetting>() ?? null;
       }
 
-      public async UniTask<SvrnResult> startSvrn(SvrnInstance inst) {
-         var result = await inst.svrnSequence(master: this);
-         board.cleanUpBoard();
-         return result;
-      }
-
       private void Awake() {
          board = GetComponentInChildren<SvrnBoard>();
          camera = GetComponentInChildren<SvrnCam>();
       }
+   }
 
 #if UNITY_EDITOR
+
+   public partial class SvrnMaster {
+
+      [InfoBox("Svrn 전용 레이어 설정 (필수!!)", EInfoBoxType.Error), HorizontalLine, SerializeField, Layer, OnValueChanged("updateLayer")]
+      private string svrnLayer;
+
+      [InfoBox("Svrn 전용 렌더 텍스쳐 설졍 (필수!!)", EInfoBoxType.Error), SerializeField, OnValueChanged("updateRenderTexture")]
+      private RenderTexture svrnTargetTexture;
+
+      [ShowNativeProperty]
+      private RenderTexture svrnTargetTextureShower => camera?.camera?.targetTexture ?? null;
+
       public void updateLayer() {
          try {
             if (UnityEditor.PrefabUtility.IsPartOfImmutablePrefab(gameObject) == false) {
@@ -65,6 +90,7 @@ namespace NoFS.DayLight.Sovereign {
          }
          catch (System.ArgumentException) { }
       }
+
       public void updateRenderTexture() {
          try {
             if (UnityEditor.PrefabUtility.IsPartOfImmutablePrefab(gameObject) == false) {
@@ -75,6 +101,7 @@ namespace NoFS.DayLight.Sovereign {
          }
          catch (System.ArgumentException) { }
       }
-#endif
    }
+
+#endif
 }

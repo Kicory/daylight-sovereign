@@ -23,12 +23,12 @@ namespace NoFS.DayLight.Sovereign.Sample {
          var cts_vertexWaver = getCancelableTokenSource();
          var token = cts.Token;
 
-         var meshHelper = new MeshHelper();
+         var meshHelper = new MeshHelper(master);
          var mesh = meshHelper.manager.prepareMeshPlaying(materials);
 
-         // Delaunator 사용할 거임.
-         DH del = new DH(UniformPoissonDiskSampler.SampleRectangle(-Vector2.one * 5, SvrnMaster.fieldSize + Vector2.one * 5, 8).ToPoints());
-         // 삼각형 edge 정보 사용할 거임.
+         // Delaunator 사용할 거임
+         DH del = new DH(DH.getCoveringPoints(new Rect(Vector2.zero, master.fieldSize), 12));
+         // 삼각형 edge 정보 사용할 거임
          IEnumerable<DH.EdgeInfo> triEdges = del.willUseTriEdge();
          // 삼각형 정보 사용할 거임
          IEnumerable<DH.TriangleInfo> triangles = del.willUseTriangle();
@@ -38,7 +38,7 @@ namespace NoFS.DayLight.Sovereign.Sample {
 
          var vertList = del.points.ToVectors3();
          mesh.SetVertices(vertList);
-         mesh.SetColors(vertList.Select(getVertextCol).ToArray());
+         mesh.SetColors(vertList.Select(v => getVertextCol(master, v)).ToArray());
 
          var waver = vertexWave(mesh, cts_vertexWaver.Token);
 
@@ -58,6 +58,7 @@ namespace NoFS.DayLight.Sovereign.Sample {
          mesh.Clear();
 
          var svrnResult = new SvrnResult {
+            resultType = SvrnResult.SvrnResultType.Finished,
             dummy = false
          };
          return svrnResult;
@@ -65,8 +66,8 @@ namespace NoFS.DayLight.Sovereign.Sample {
 
       #region 인스턴스 헬퍼 함수들
 
-      private Color32 getVertextCol(Vector3 v) {
-         byte colval = (byte)(byte.MaxValue * (Vector2Int.FloorToInt(v).sqrMagnitude / SvrnMaster.fieldSize.sqrMagnitude));
+      private Color32 getVertextCol(SvrnMaster master, Vector3 v) {
+         byte colval = (byte)(byte.MaxValue * (Vector2Int.FloorToInt(v).sqrMagnitude / master.fieldSize.sqrMagnitude));
          //return new Color32((byte)(colval * Random.Range(0, 1.2f)), (byte)(colval * Random.Range(0, 1.2f)), (byte)(colval * Random.Range(0, 1.2f)), byte.MaxValue);
          return new Color32(byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue);
       }
@@ -77,40 +78,30 @@ namespace NoFS.DayLight.Sovereign.Sample {
 
       private async UniTask makeEdge(Mesh mesh, int subMeshIdx, IEnumerable<DH.EdgeInfo> edges, CancellationToken token) {
          var indexList = new List<int>();
-         float timeSave = 0;
-         float interval = 5;
+         double overWaited = 0;
          mesh.GetIndices(indexList, subMeshIdx);
          foreach (var edge in edges) {
-            while (timeSave < interval) {
-               await UniTask.NextFrame(token);
-               timeSave += Time.deltaTime * 1000f;
-            }
-            timeSave -= interval;
+            
+            overWaited = await waitNextFramesIfNecessary(0.004, overWaited, token);
 
             indexList.Add(edge.Q);
             indexList.Add(edge.P);
             mesh.SetIndices(indexList, MeshTopology.Lines, subMeshIdx);
-            //await UniTask.Delay(5, cancellationToken: token);
          }
       }
 
       private async UniTask makeTriFace(Mesh mesh, int subMeshIdx, IEnumerable<DH.TriangleInfo> tries, CancellationToken token) {
          var indexList = new List<int>();
-         float timeSave = 0;
-         float interval = 7.5f;
+         double overWaited = 0;
          mesh.GetIndices(indexList, subMeshIdx);
          foreach (var tri in tries) {
-            while (timeSave < interval) {
-               await UniTask.NextFrame(token);
-               timeSave += Time.deltaTime * 1000f;
-            }
-            timeSave -= interval;
+
+            overWaited = await waitNextFramesIfNecessary(0.007, overWaited, token);
 
             indexList.Add(tri.idx0);
             indexList.Add(tri.idx1);
             indexList.Add(tri.idx2);
             mesh.SetIndices(indexList, MeshTopology.Triangles, subMeshIdx);
-            //await UniTask.Delay(10, cancellationToken: token);
          }
       }
 
@@ -123,7 +114,7 @@ namespace NoFS.DayLight.Sovereign.Sample {
                newVertList[idx] = vert + new Vector3(Mathf.Cos(vert.sqrMagnitude + Time.time * 2), Mathf.Sin(vert.sqrMagnitude + Time.time * 2), vert.z) * 2;
             }
             mesh.vertices = newVertList;
-            await UniTask.NextFrame(cancellationToken: token);
+            await UniTask.NextFrame(token);
          }
       }
 
@@ -131,7 +122,7 @@ namespace NoFS.DayLight.Sovereign.Sample {
 
       [Button("Do Svrn")]
       public void doSeq() {
-         SvrnMaster.inst.startSvrn(this).ContinueWith((result) => { Debug.Log(result.dummy); });
+         SvrnMaster.startSvrn(this).ContinueWith((result) => { Debug.Log(result.dummy); });
       }
 
       private void OnGUI() {

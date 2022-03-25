@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Cinemachine;
 using UnityEngine;
 using RTF = UnityEngine.RectTransform;
 
 namespace NoFS.DayLight.Sovereign {
+
    [ExecuteAlways]
    [AddComponentMenu("Sovereign/Sovereign Board")]
    public class SvrnBoard : MonoBehaviour {
@@ -25,6 +25,9 @@ namespace NoFS.DayLight.Sovereign {
       }
 
       public void cleanUpBoard() {
+         if (boardComponents.Count == 0) {
+            return;
+         }
          foreach (GameObject obj in boardComponents) {
             Destroy(obj);
          }
@@ -36,6 +39,7 @@ namespace NoFS.DayLight.Sovereign {
       }
 
 #if UNITY_EDITOR
+
       public void setLayer(string svrnLayer) {
          gameObject.layer = LayerMask.NameToLayer(svrnLayer);
          if (meshManagerPrefab != null) {
@@ -44,10 +48,11 @@ namespace NoFS.DayLight.Sovereign {
          else {
             Debug.LogWarning($"{nameof(SvrnBoard)}에 {nameof(MeshManager)} 프리팹 넣어야 함.");
          }
-         foreach(Transform chgo in rtf) {
+         foreach (Transform chgo in rtf) {
             chgo.gameObject.layer = LayerMask.NameToLayer(svrnLayer);
          }
-      } 
+      }
+
 #endif
    }
 }

@@ -3,6 +3,8 @@ using System.Linq;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using DelaunatorSharp;
+using DelaunatorSharp.Unity;
+using DelaunatorSharp.Unity.Extensions;
 
 namespace NoFS.DayLight.Sovereign {
    public class DelaunatorHelper {
@@ -45,6 +47,19 @@ namespace NoFS.DayLight.Sovereign {
       public readonly Delaunator delaunator;
 
       public IPoint[] points => delaunator.Points;
+
+      /// <summary>
+      /// 삼각형의 면이 주어진 <see cref="Rect"/>, <paramref name="toCover"/>을 완전히 덮는 것이 보장된 <see cref="IPoint"/>s를 리턴함
+      /// </summary>
+      /// <remarks>
+      /// <code>
+      /// ... new DelaunatorHelper(getCoveringPoints(new Rect(Vector2.zero, master.fieldSize), 8));
+      /// </code>
+      /// </remarks>
+      public static IPoint[] getCoveringPoints(Rect toCover, float minDistance) {
+         Vector2 padding = Vector2.one * minDistance;
+         return UniformPoissonDiskSampler.SampleRectangle(toCover.min - padding, toCover.max + padding, minDistance).ToPoints();
+      }
       
       /// <summary>
       /// Delaunator 판 하나를 만들 <see cref="DelaunatorHelper"/> 객체 생성 및 초기화

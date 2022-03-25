@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEditor;
-using NoFS.DayLight.Sovereign;
+using NoFS.DayLight.Sovereign.Cari;
 
 namespace NoFS.DayLight.SovereignEditor {
    [CustomEditor(typeof(CariBoard))]

@@ -1,6 +1,6 @@
 {
     "name": "com.nofs.daylight.sovereign",
-    "version": "0.0.7",
+    "version": "0.0.8",
     "displayName": "Sovereign Package",
     "description": "소버린 개발을 다른 곳에서 하려구 만듦",
     "unity": "2020.3",
@@ -13,7 +13,8 @@
       "com.nol1fe.delaunator": "1.0.9",
       "com.unity.postprocessing": "3.2.1",
       "com.unity.cinemachine": "2.6.11",
-      "com.cysharp.unitask": "2.3.1"
+      "com.cysharp.unitask": "2.3.1",
+      "com.unity.ugui": "1.0.0"
    },
    "keywords": [
       "daylight"

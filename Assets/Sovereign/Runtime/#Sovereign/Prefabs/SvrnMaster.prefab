@@ -196,7 +196,7 @@ Camera:
     serializedVersion: 2
     m_Bits: 2147483648
   m_RenderingPath: -1
-  m_TargetTexture: {fileID: 8400000, guid: d13f490b4790c4b4883ddc51190ace90, type: 2}
+  m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
   m_TargetEye: 3
   m_HDR: 0
@@ -218,7 +218,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b9a305e18de0c04dbd257a21cd47087, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sharedProfile: {fileID: 11400000, guid: 17c2b86c42d0c2d4c837a72f64199a31, type: 2}
+  sharedProfile: {fileID: 0}
   isGlobal: 1
   blendDistance: 0
   weight: 1
@@ -450,7 +450,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 39eba67953e51454f9ee289ff6c66e68, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  meshManagerPrefab: {fileID: 5299301469530992231, guid: 2f03b7a81727a4c448886421dfe1976b, type: 3}
+  meshManagerPrefab: {fileID: 0}
 --- !u!1 &6297594542994334617
 GameObject:
   m_ObjectHideFlags: 0
@@ -503,6 +503,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   svrnLayer: SvrnLayer
+  svrnTargetTexture: {fileID: 0}
 --- !u!1 &6297594543317052504
 GameObject:
   m_ObjectHideFlags: 0

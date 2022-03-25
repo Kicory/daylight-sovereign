@@ -21,8 +21,13 @@ namespace NoFS.DayLight.Sovereign {
       new public SvrnCam camera { get; private set; }
 
 #if UNITY_EDITOR
-      [InfoBox("Svrn 전용 레이어 설정 (필수!!)"), HorizontalLine, SerializeField, Layer, OnValueChanged("updateLayer")]
+      [InfoBox("Svrn 전용 레이어 설정 (필수!!)", EInfoBoxType.Error), HorizontalLine, SerializeField, Layer, OnValueChanged("updateLayer")]
       private string svrnLayer;
+      [InfoBox("Svrn 전용 렌더 텍스쳐 설졍 (필수!!)", EInfoBoxType.Error), SerializeField, OnValueChanged("updateRenderTexture")]
+      private RenderTexture svrnTargetTexture;
+
+      [ShowNativeProperty]
+      private RenderTexture svrnTargetTextureShower => camera.camera.targetTexture;
 #endif
 
       public MeshManager getMeshManagerInstance() {
@@ -47,10 +52,18 @@ namespace NoFS.DayLight.Sovereign {
 
 #if UNITY_EDITOR
       public void updateLayer() {
-         gameObject.layer = LayerMask.NameToLayer(svrnLayer);
-         camera.setLayer(svrnLayer);
-         board.setLayer(svrnLayer);
-         UnityEditor.PrefabUtility.ApplyPrefabInstance(this.gameObject, UnityEditor.InteractionMode.AutomatedAction);
+         if (UnityEditor.PrefabUtility.IsPartOfImmutablePrefab(gameObject) == false){
+            gameObject.layer = LayerMask.NameToLayer(svrnLayer);
+            camera.setLayer(svrnLayer);
+            board.setLayer(svrnLayer);
+            UnityEditor.PrefabUtility.ApplyPrefabInstance(this.gameObject, UnityEditor.InteractionMode.AutomatedAction);
+         }
+      }
+      public void updateRenderTexture() {
+         if (UnityEditor.PrefabUtility.IsPartOfImmutablePrefab(gameObject) == false) {
+            camera.camera.targetTexture = svrnTargetTexture;
+            UnityEditor.PrefabUtility.ApplyPrefabInstance(this.gameObject, UnityEditor.InteractionMode.AutomatedAction);
+         }
       }
 #endif
    }

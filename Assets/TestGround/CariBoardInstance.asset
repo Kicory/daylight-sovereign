@@ -12,4 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 73038c8a3ca00fc47bda2a4fabb62676, type: 3}
   m_Name: CariBoardInstance
   m_EditorClassIdentifier: 
-  fdsa: 0
+  _boardRect:
+    x: -12
+    y: -25
+    width: 63
+    height: 47
+  _cellSize: 10.7

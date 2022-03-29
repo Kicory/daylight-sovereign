@@ -8,6 +8,10 @@ namespace NoFS.DayLight.CariBoard {
       [SerializeField]
       private RectInt _boardRect;
 
+      [System.NonSerialized]
+      //실제 게임에서는 boardMap은 변하지 않기 때문에, Board가 로드되고 사용되는 한 번 이외에는 만들 필요 없음
+      private Compo[,] boardMap = null;
+
 #if UNITY_EDITOR
 
       [SerializeField, Range(10, 60)]
@@ -20,10 +24,25 @@ namespace NoFS.DayLight.CariBoard {
       public Board() {
          _boardRect = new RectInt(-5, -15, 50, 30);
       }
+
+      public Compo[,] getBoardMap() {
+         return new Compo[_boardRect.width, _boardRect.height];
+      }
+   }
+
+
+   public abstract class Compo {
+
    }
 
    [System.Serializable]
-   public class Axis {
+   public class Wire : Compo {
+      [SerializeField]
+      private Vector2Int _pos;
+   }
+
+   [System.Serializable]
+   public class Axis : Compo {
 
       [SerializeField]
       private RectInt _rect;

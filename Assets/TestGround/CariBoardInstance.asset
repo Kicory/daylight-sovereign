@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: CariBoardInstance
   m_EditorClassIdentifier: 
   _boardRect:
-    x: -12
-    y: -25
-    width: 63
-    height: 47
-  _cellSize: 10.7
+    x: -8
+    y: -6
+    width: 22
+    height: 16
+  _cellSize: 23.9

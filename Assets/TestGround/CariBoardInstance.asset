@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 73038c8a3ca00fc47bda2a4fabb62676, type: 3}
-  m_Name: CariBoardInstance
+  m_Name: 
   m_EditorClassIdentifier: 
   _boardRect:
     x: -8
-    y: -6
-    width: 22
-    height: 16
-  _cellSize: 23.9
+    y: -377
+    width: 74
+    height: 398
+  _cellSize: 14.04

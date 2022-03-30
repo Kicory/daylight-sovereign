@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace NoFS.DayLight.CariBoard {
@@ -7,38 +9,66 @@ namespace NoFS.DayLight.CariBoard {
 
       [SerializeField]
       private RectInt _boardRect;
-
-      [System.NonSerialized]
-      //실제 게임에서는 boardMap은 변하지 않기 때문에, Board가 로드되고 사용되는 한 번 이외에는 만들 필요 없음
-      private Compo[,] boardMap = null;
-
-#if UNITY_EDITOR
-
-      [SerializeField, Range(10, 60)]
-      private float _cellSize;
-
-#endif
+      [SerializeField]
+      private List<Compo> _compos;
 
       public RectInt boardRect => _boardRect;
 
+      /// <summary>
+      /// 저장되어 있는 <see cref="Compo"/>들을 바탕으로 계산된 board 위 <see cref="Compo"/>들의 위치.
+      /// </summary>
+      public Compo[,] cachedBoardMap { get; private set; } = null;
+
       public Board() {
-         _boardRect = new RectInt(-5, -15, 50, 30);
+         _boardRect = new RectInt(0, 0, 1, 1);
+         _compos = new List<Compo>();
       }
 
-      public Compo[,] getBoardMap() {
-         return new Compo[_boardRect.width, _boardRect.height];
+      public Compo[,] forceRemakeCachedBoardMap() {
+         cachedBoardMap = new Compo[_boardRect.width, _boardRect.height];
+         foreach (Compo compo in _compos) {
+            var cRect = compo.rect;
+            for (int xx = 0; xx < cRect.width; xx++) {
+               for (int yy = 0; yy < cRect.height; yy++) {
+#if INDEV
+                  if (cachedBoardMap[xx, yy] != default) {
+                     Debug.LogWarning($"({xx}, {yy})에서 겹침 있는 것 같음...");
+                  }
+                  try {
+#endif
+                     cachedBoardMap[xx, yy] = compo;
+#if INDEV
+
+                  } catch (IndexOutOfRangeException) {
+                     Debug.LogError($"Board를 벗어난 {nameof(Compo)}가 있음: ({xx}, {yy})");
+                  }
+#endif
+               }
+            }
+         }
+         return cachedBoardMap;
       }
+
+#if UNITY_EDITOR
+      [SerializeField, Range(10, 60)]
+      private float _cellSize;
+#endif
    }
 
-
+   /// <summary>
+   /// Board 위에 올라가는 모든 요소들의 superclass
+   /// </summary>
+   [System.Serializable]
    public abstract class Compo {
-
+      public abstract RectInt rect { get; }
    }
 
    [System.Serializable]
    public class Wire : Compo {
       [SerializeField]
       private Vector2Int _pos;
+
+      public override RectInt rect => new RectInt(_pos, Vector2Int.one);
    }
 
    [System.Serializable]
@@ -50,16 +80,12 @@ namespace NoFS.DayLight.CariBoard {
       [SerializeField]
       private Afforder _afforder;
 
-      public RectInt rect => _rect;
+      public override RectInt rect => _rect;
       public Afforder afforder => _afforder;
+      public string afforderCode => afforder?.code ?? null;
 
-      [System.NonSerialized]
-      public readonly Board board;
-
-      public Axis(Board _board, RectInt _rect, Afforder _afforder) {
-         this.board = _board;
+      public Axis(RectInt _rect, Afforder _afforder) {
 #if INDEV
-         Debug.Assert(_board.boardRect.Contains(_rect.min) && _board.boardRect.Contains(_rect.max), "Axis의 크기가 Board를 벗어남");
          Debug.Assert(_rect.size.x >= 1 && _rect.size.y >= 1, "Axis의 크기는 0일 수 없음");
 #endif
          this._rect = _rect;
@@ -75,14 +101,7 @@ namespace NoFS.DayLight.CariBoard {
 
       public string code => _code;
 
-      [System.NonSerialized]
-      public readonly Axis axis;
-
-      public Afforder(Axis axis, string code) {
-#if INDEV
-         Debug.Assert(axis != null && code != null, $"Afforder의 Axis({axis})와 code({code})는 null일 수 없음");
-#endif
-         this.axis = axis;
+      public Afforder(string code) {
          this._code = code;
       }
    }

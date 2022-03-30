@@ -13,8 +13,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _boardRect:
-    x: -8
-    y: -377
-    width: 74
-    height: 398
-  _cellSize: 14.04
+    x: 0
+    y: 0
+    width: 55
+    height: 41
+  _compos:
+  - id: 0
+  _cellSize: 10
+  references:
+    version: 1
+    00000000:
+      type: {class: Axis, ns: NoFS.DayLight.CariBoard, asm: NoFS.DayLight.Sovereign}
+      data:
+        _rect:
+          x: 0
+          y: 0
+          width: 1
+          height: 1
+        _afforder:
+          _code: TEST22

@@ -9,7 +9,7 @@ namespace NoFS.DayLight.CariBoard {
 
       [SerializeField]
       private RectInt _boardRect;
-      [SerializeField]
+      [SerializeReference]
       private List<Compo> _compos;
 
       public RectInt boardRect => _boardRect;
@@ -22,65 +22,84 @@ namespace NoFS.DayLight.CariBoard {
       public Board() {
          _boardRect = new RectInt(0, 0, 1, 1);
          _compos = new List<Compo>();
+         _compos.Add(new Axis(new RectInt(0, 0, 1, 1), new Afforder("TEST")));
       }
 
-      public Compo[,] forceRemakeCachedBoardMap() {
+      /// <summary>
+      /// 런타임에만 사용하는 함수
+      /// </summary>
+      private void makeCachedBoardMap() {
          cachedBoardMap = new Compo[_boardRect.width, _boardRect.height];
          foreach (Compo compo in _compos) {
             var cRect = compo.rect;
             for (int xx = 0; xx < cRect.width; xx++) {
                for (int yy = 0; yy < cRect.height; yy++) {
-#if INDEV
-                  if (cachedBoardMap[xx, yy] != default) {
-                     Debug.LogWarning($"({xx}, {yy})에서 겹침 있는 것 같음...");
-                  }
-                  try {
-#endif
-                     cachedBoardMap[xx, yy] = compo;
-#if INDEV
-
-                  } catch (IndexOutOfRangeException) {
-                     Debug.LogError($"Board를 벗어난 {nameof(Compo)}가 있음: ({xx}, {yy})");
-                  }
-#endif
+                  cachedBoardMap[xx, yy] = compo;
                }
             }
          }
-         return cachedBoardMap;
       }
+
+
 
 #if UNITY_EDITOR
       [SerializeField, Range(10, 60)]
-      private float _cellSize;
+      private float _cellSize = 10;
+
+      public CompoInfo[,] forceRemakeCachedBoardMap() {
+         var compoIndexMap = new CompoInfo[_boardRect.width, _boardRect.height];
+         for (int idx = 0; idx < _compos.Count; idx++) {
+            Compo compo = _compos[idx];
+            var cRect = compo.rect;
+            for (int xx = cRect.min.x; xx < cRect.max.x; xx++) {
+               for (int yy = cRect.min.y; yy < cRect.max.y; yy++) {
+                  try {
+                     if (compoIndexMap[xx, yy] != null) {
+                        Debug.LogWarning($"({xx}, {yy})에서 겹침 있는 것 같음...");
+                     }
+                     compoIndexMap[xx, yy] = new CompoInfo() {
+                        indexInBoardList = idx,
+                        type = compo.GetType()
+                     };
+                  }
+                  catch (IndexOutOfRangeException) {
+                     Debug.LogError($"Board를 벗어난 {nameof(Compo)}가 있음: ({xx}, {yy})");
+                  }
+               }
+            }
+         }
+         return compoIndexMap;
+      }
 #endif
    }
+
+#if UNITY_EDITOR
+   public class CompoInfo {
+      public int indexInBoardList;
+      public Type type;
+   }
+#endif
 
    /// <summary>
    /// Board 위에 올라가는 모든 요소들의 superclass
    /// </summary>
-   [System.Serializable]
+   [Serializable]
    public abstract class Compo {
-      public abstract RectInt rect { get; }
-   }
-
-   [System.Serializable]
-   public class Wire : Compo {
-      [SerializeField]
-      private Vector2Int _pos;
-
-      public override RectInt rect => new RectInt(_pos, Vector2Int.one);
-   }
-
-   [System.Serializable]
-   public class Axis : Compo {
-
       [SerializeField]
       private RectInt _rect;
 
+      public RectInt rect { get => _rect; protected set => _rect = value; }
+   }
+
+   [Serializable]
+   public class Wire : Compo {
+   }
+
+   [Serializable]
+   public class Axis : Compo {
       [SerializeField]
       private Afforder _afforder;
 
-      public override RectInt rect => _rect;
       public Afforder afforder => _afforder;
       public string afforderCode => afforder?.code ?? null;
 
@@ -88,12 +107,12 @@ namespace NoFS.DayLight.CariBoard {
 #if INDEV
          Debug.Assert(_rect.size.x >= 1 && _rect.size.y >= 1, "Axis의 크기는 0일 수 없음");
 #endif
-         this._rect = _rect;
+         this.rect = _rect;
          this._afforder = _afforder;
       }
    }
 
-   [System.Serializable]
+   [Serializable]
    public class Afforder {
 
       [SerializeField]

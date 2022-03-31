@@ -10,25 +10,36 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 73038c8a3ca00fc47bda2a4fabb62676, type: 3}
-  m_Name: 
+  m_Name: CariBoardInstance
   m_EditorClassIdentifier: 
   _boardRect:
-    x: 0
-    y: 0
-    width: 55
-    height: 41
+    x: -22
+    y: -4
+    width: 24
+    height: 19
   _compos:
   - id: 0
-  _cellSize: 10
+  - id: 1
+  _cellSize: 18.47
   references:
     version: 1
     00000000:
-      type: {class: Axis, ns: NoFS.DayLight.CariBoard, asm: NoFS.DayLight.Sovereign}
+      type: {class: ActiveAxis, ns: NoFS.DayLight.CariBoard, asm: NoFS.DayLight.Sovereign}
       data:
         _rect:
-          x: 0
-          y: 0
+          x: -5
+          y: 1
           width: 1
           height: 1
         _afforder:
-          _code: TEST22
+          _code: TEST
+    00000001:
+      type: {class: PassiveAxis, ns: NoFS.DayLight.CariBoard, asm: NoFS.DayLight.Sovereign}
+      data:
+        _rect:
+          x: -14
+          y: 1
+          width: 9
+          height: 9
+        _afforder:
+          _code: TEST2

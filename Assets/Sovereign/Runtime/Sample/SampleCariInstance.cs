@@ -1,7 +1,20 @@
 ﻿using Cysharp.Threading.Tasks;
+using NaughtyAttributes;
+using NoFS.DayLight.CariBoard;
+using UnityEngine;
 
 namespace NoFS.DayLight.Sovereign.Cari {
    public class SampleCariInstance : CariInstance {
+      [SerializeField]
+      public Board board;
+
+      [Button]
+      public void doWhatever() {
+         foreach(Compo c in board["PRIME"]) {
+            Debug.Log(c.GetType().Name);
+         }
+      }
+
       public override async UniTask doCariVisualConventions(SvrnMaster master) {
          return;
       }

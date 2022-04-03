@@ -13,45 +13,12 @@ MonoBehaviour:
   m_Name: CariBoardInstance
   m_EditorClassIdentifier: 
   _boardRect:
-    x: -9
-    y: -5
-    width: 105
-    height: 53
-  _compos:
-  - id: 0
-  - id: 1
-  - id: 2
-  _cellSize: 10
-  _creatingCompoType: 1
+    x: -2
+    y: -2
+    width: 5
+    height: 5
+  _compos: []
+  _cellSize: 60
+  _creatingCompoType: 2
   references:
     version: 1
-    00000000:
-      type: {class: PassiveAxis, ns: NoFS.DayLight.CariBoard, asm: NoFS.DayLight.Sovereign}
-      data:
-        _rect:
-          x: -6
-          y: -2
-          width: 3
-          height: 3
-        _afforder:
-          _code: Passive
-    00000001:
-      type: {class: PassiveAxis, ns: NoFS.DayLight.CariBoard, asm: NoFS.DayLight.Sovereign}
-      data:
-        _rect:
-          x: 0
-          y: -3
-          width: 2
-          height: 2
-        _afforder:
-          _code: Passive
-    00000002:
-      type: {class: PassiveAxis, ns: NoFS.DayLight.CariBoard, asm: NoFS.DayLight.Sovereign}
-      data:
-        _rect:
-          x: 56
-          y: 28
-          width: 6
-          height: 5
-        _afforder:
-          _code: Passive

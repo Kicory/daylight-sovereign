@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using NoFS.DayLight.CariBoard;
 using UnityEditor;
@@ -22,9 +23,13 @@ namespace NoFS.DayLight.CariBoardEditor {
          Drag
       }
 
+      [Flags]
+      private enum Dirtyness { None = 0, Grid = 1 << 0, Visual = 1 << 1, Full = Grid | Visual }
+
       private Vector2 scrollPos { get; set; } = Vector2.zero;
       private GUIStyle style = null;
       private string creatingCompoTypeName => creatingCompoType?.enumNames[creatingCompoType.enumValueIndex] ?? null;
+      private bool showAllCompos = false;
 
       private SerializedProperty boardRect;
       private SerializedProperty cellSize;
@@ -36,9 +41,7 @@ namespace NoFS.DayLight.CariBoardEditor {
       private readonly Vector2Int yCorrectOne = new Vector2Int(1, -1);
       private readonly Color gridCol = new Color(1f, 1f, 1f, 0.1f);
       private readonly Color highlightCol = new Color(1f, 1f, 1f, 0.1f);
-      private readonly Color ghostCol = new Color(0.8f, 0, 0, 1f);
-      private readonly Color activeAxisCol = new Color(1, 1, 1, 0.6f);
-      private readonly Color passiveAxisCol = new Color(0, 0, 0, 1f);
+      private readonly Color ghostCol = new Color(0.8f, 0.1f, 0.1f, 1f);
       private float scrollSafeWidth => EditorGUIUtility.currentViewWidth - 40;
 
       private Vector2 originPos = Vector2.zero;
@@ -47,12 +50,14 @@ namespace NoFS.DayLight.CariBoardEditor {
       private Vector2Int boardSize => boardRect?.rectIntValue.size ?? Vector2Int.zero;
 
       private static CompoInfo?[,] cachedBoardMap = null;
-      private bool boardMapDirty = false;
+      private static List<DrawInfo> cachedDrawList = null;
+      private static Dirtyness boardMapDirty = Dirtyness.None;
 
       private PointerTarget pointerTarget = PointerTarget.None;
       private PointerStatus pointerStatus = PointerStatus.None;
 
       private CompoInfo? _curHotCompoInfo = null;
+
       private CompoInfo? curHotCompoInfo {
          get => _curHotCompoInfo;
          set {
@@ -60,23 +65,26 @@ namespace NoFS.DayLight.CariBoardEditor {
             _curHotCompoInfo = value;
          }
       }
+
       private int? curHotCompoIdx => curHotCompoInfo?.indexInBoardList ?? null;
       private string curHotCompoTypeName => curHotCompoInfo?.typeName ?? null;
 
       private SerializedProperty curHotCompoProperty = null;
 
       /// <remarks> 위가 y+이고 min이 음수일 수 있는 좌표계 기준 </remarks>
-      private Vector2Int? curMouseCell { get; set; } = Vector2Int.zero;
+      private Vector2Int? curMouseCell { get; set; } = null;
 
       /// <summary> 직전에 pointer down 이벤트가 있었던 cell 위치 </summary>
       /// <remarks> 위가 y+이고 min이 음수일 수 있는 좌표계 기준 </remarks>
-      private Vector2Int? prevDownCell { get; set; } = Vector2Int.zero;
+      private Vector2Int? prevDownCell { get; set; } = null;
 
       /// <remarks> 위가 y+이고 min이 음수일 수 있는 좌표계 기준 </remarks>
       private RectInt? ghostBoxRect = null;
 
       public override void OnInspectorGUI() {
          serializedObject.Update();
+         EditorGUILayout.HelpBox("클릭하여 Axis 선택 / 드래그하여 Axis 생성 / Del 키로 선택된 Axis 제거 / " +
+            "화살표 키로 선택된 Axis 이동 / Ctrl + 화살표 키로 선택된 Axis 크기 변경", MessageType.Info);
 
          basicProperties();
 
@@ -88,7 +96,10 @@ namespace NoFS.DayLight.CariBoardEditor {
 
          drawCompos();
 
-         drawGhostBox();
+         //Draw origin
+         EditorGUI.DrawRect(new Rect(originPos, (Vector2)yCorrectOne * unit / 3), Color.red);
+
+         drawGhostBox(ghostCol);
 
          EditorGUILayout.EndScrollView();
          // 스크롤 뷰 밖에서는 좌표계가 다르므로 grid board에 그리는 코드 쓰지 말 것!
@@ -105,10 +116,11 @@ namespace NoFS.DayLight.CariBoardEditor {
 
          serializedObject.ApplyModifiedProperties();
 
-         if (boardMapDirty) {
-            reCalcBoardMap();
-            boardMapDirty = false;
+         if (boardMapDirty != Dirtyness.None && Event.current.type == EventType.Repaint) {
+            forceRemakeBoardCache(boardMapDirty);
+            boardMapDirty = Dirtyness.None;
          }
+
       }
 
       private void handlePointerEvent() {
@@ -117,6 +129,7 @@ namespace NoFS.DayLight.CariBoardEditor {
          Vector2Int cellCoordFromZero = Vector2Int.zero;
          string compoType;
          bool clickPerfomed = false;
+         Vector2Int? prevPrevDownCell = null;
 
          #region SAVE
 
@@ -137,9 +150,10 @@ namespace NoFS.DayLight.CariBoardEditor {
          GUI.FocusControl(null);
 
          cellCoordFromZero = curMouseCell.Value - boardMin;
-         compoType = cachedBoardMap[cellCoordFromZero.x, cellCoordFromZero.y]?.typeName ?? null;
+         compoType = cachedBoardMap?[cellCoordFromZero.x, cellCoordFromZero.y]?.typeName ?? null;
 
          #region TODO
+
          if (compoType == null) {
             pointerTarget = PointerTarget.Empty;
          }
@@ -148,13 +162,15 @@ namespace NoFS.DayLight.CariBoardEditor {
          }
          else if (compoType == nameof(Wire)) {
             pointerTarget = PointerTarget.Empty;
-         } 
-         #endregion
+         }
+
+         #endregion TODO
 
          if (Event.current.isMouse) {
             switch (Event.current.type) {
                case EventType.MouseUp:
                   pointerStatus = PointerStatus.Hover;
+                  prevPrevDownCell = prevDownCell;
                   prevDownCell = null;
                   break;
 
@@ -234,7 +250,6 @@ DO_WORK:
                   creatingRef = new ActiveAxis(newCompoRect, new Afforder("Active"));
                }
                else if (creatingTypeName == nameof(Wire)) {
-
                }
                else {
                   //
@@ -243,8 +258,14 @@ DO_WORK:
                   compos.InsertArrayElementAtIndex(nextIdx);
                   compos.GetArrayElementAtIndex(nextIdx).managedReferenceValue = creatingRef;
                   curHotCompoInfo = new CompoInfo(nextIdx, creatingTypeName);
-                  boardMapDirty = true; 
+                  boardMapDirty = Dirtyness.Full;
                }
+            }
+            else if (prevPrevDownCell.HasValue && prevPrevDownCell.Value == curMouseCell.Value) {
+               //셀 안에서만 마우스가 드래그 되었다면, 그냥 클릭한 것으로 침.
+               prevPrevDownCell = null;
+               prevPointerStatus = PointerStatus.Down;
+               goto DO_WORK;
             }
          }
       }
@@ -259,7 +280,7 @@ DO_WORK:
             compos.DeleteArrayElementAtIndex(curHotCompoIdx.Value);
             curHotCompoInfo = null;
             Event.current.Use();
-            boardMapDirty = true;
+            boardMapDirty = Dirtyness.Full;
             //reCalcBoardMap(); // 이후에 cachedBoardMap을 사용하는 코드가 있어서 즉시 업데이트를 해 줘야 함
             return;
          }
@@ -303,7 +324,7 @@ DO_WORK:
 
          if (isValidRectForCompoIdx(curCompoRect, curHotCompoIdx)) {
             curCompoRectProperty.rectIntValue = curCompoRect;
-            boardMapDirty = true;
+            boardMapDirty = Dirtyness.Full;
          }
          Event.current.Use();
       }
@@ -311,13 +332,18 @@ DO_WORK:
       private void basicProperties() {
          EditorGUIUtility.wideMode = true;
          EditorGUILayout.BeginHorizontal();
-         EditorGUI.BeginChangeCheck();
          EditorGUIUtility.labelWidth = 80;
+         EditorGUI.BeginChangeCheck();
          EditorGUILayout.PropertyField(boardRect);
          if (EditorGUI.EndChangeCheck()) {
-            boardMapDirty = true;
+            boardMapDirty = Dirtyness.Full;
          }
+
+         EditorGUI.BeginChangeCheck();
          EditorGUILayout.PropertyField(cellSize);
+         if (EditorGUI.EndChangeCheck()) {
+            boardMapDirty = Dirtyness.Full;
+         }
          EditorGUILayout.EndHorizontal();
 
          EditorGUILayout.BeginHorizontal();
@@ -325,7 +351,8 @@ DO_WORK:
          EditorGUILayout.PropertyField(creatingCompoType);
          GUILayout.Label(" ", GUILayout.Width(scrollSafeWidth / 4));
          if (GUILayout.Button("Refresh", GUILayout.Width(scrollSafeWidth / 4))) {
-            boardMapDirty = true;
+            boardMapDirty = Dirtyness.Full;
+            (target as Board).cachedBoardMap = null;
          }
          EditorGUILayout.EndHorizontal();
          EditorGUIUtility.labelWidth = 0;
@@ -335,7 +362,6 @@ DO_WORK:
          var boardCenter = (boardMax + (Vector2)boardMin) / 2f;
 
          Rect gridRect = GUILayoutUtility.GetRect(size.x, size.y);
-         originPos = gridRect.center - (boardCenter * yCorrectOne * unit);
 
          //그냥 배경용 박스
          GUI.Box(gridRect, "");
@@ -343,8 +369,8 @@ DO_WORK:
             //이 이후로는 어차피 Layout 등이 관여할 필요가 없음 (그리기만 하면 됨)
             return;
          }
-         //오리진 표시
-         EditorGUI.DrawRect(new Rect(originPos, (Vector2)yCorrectOne * unit / 3), Color.cyan);
+         //오리진 값 구하기
+         originPos = new Vector2(gridRect.xMin + (size.x / 2), gridRect.center.y) - (boardCenter * yCorrectOne * unit);
 
          for (int yy = boardMin.y; yy <= boardMax.y; yy++) {
             //인스펙터 좌표계는 아래 = y+ 임...
@@ -371,44 +397,16 @@ DO_WORK:
       }
 
       private void drawCompos() {
-         if (Event.current.type != EventType.Repaint) {
+         if (Event.current.type != EventType.Repaint || cachedDrawList == null) {
             return;
          }
 
-         var size = boardSize;
-         Color drawColor;
-         for (int xx = 0; xx < size.x; xx++) {
-            for (int yy = 0; yy < size.y; yy++) {
-               CompoInfo? compoInfo = cachedBoardMap[xx, yy];
-               if (compoInfo != null) {
-                  drawColor = colorPicker(compoInfo.Value);
-                  EditorGUI.DrawRect(cellRect2Rect(new RectInt(xx + boardMin.x, yy + boardMin.y, 1, 1)), drawColor);
-               }
-            }
-         }
-
-         Color colorPicker(CompoInfo compoInfo) {
-            Color drawColor;
-            if (compoInfo.typeName == nameof(PassiveAxis)) {
-               drawColor = passiveAxisCol;
-            }
-            else if (compoInfo.typeName == nameof(ActiveAxis)) {
-               drawColor = activeAxisCol;
-            }
-            else {
-               drawColor = Color.clear;
-            }
-            SerializedProperty hotCompoProperty = compos.GetArrayElementAtIndex(compoInfo.indexInBoardList);
-            string afforderCode = hotCompoProperty.FindPropertyRelative("_afforder")?.FindPropertyRelative("_code")?.stringValue ?? null;
-            if (afforderCode != null && afforderCode.StartsWith("PRIME")) {
-               drawColor = Color.yellow;
-            }
-
-            return drawColor;
+         foreach (DrawInfo draw in cachedDrawList) {
+            EditorGUI.DrawRect(draw.getGridRect(this), draw.getColor());
          }
       }
 
-      private void drawGhostBox() {
+      private void drawGhostBox(Color col) {
          if (Event.current.type != EventType.Repaint) {
             return;
          }
@@ -419,22 +417,16 @@ DO_WORK:
          if (!ghostBoxRect.HasValue) {
             return;
          }
-         var boxRect = cellRect2Rect(ghostBoxRect.Value);
+         var boxRect = cellRect2GridRect(ghostBoxRect.Value);
 
-         EditorGUI.DrawRect(new Rect(boxRect) { height = 3, y = boxRect.y - 1 }, ghostCol);
-         EditorGUI.DrawRect(new Rect(boxRect) { height = 3, y = boxRect.yMax - 1 }, ghostCol);
-         EditorGUI.DrawRect(new Rect(boxRect) { width = 3, x = boxRect.x - 1 }, ghostCol);
-         EditorGUI.DrawRect(new Rect(boxRect) { width = 3, x = boxRect.xMax - 1 }, ghostCol);
+         EditorGUI.DrawRect(new Rect(boxRect) { height = 3, y = boxRect.y - 1 }, col);
+         EditorGUI.DrawRect(new Rect(boxRect) { height = 3, y = boxRect.yMax - 1 }, col);
+         EditorGUI.DrawRect(new Rect(boxRect) { width = 3, x = boxRect.x - 1 }, col);
+         EditorGUI.DrawRect(new Rect(boxRect) { width = 3, x = boxRect.xMax - 1 }, col);
       }
 
-      private Rect cellRect2Rect(RectInt cellRect) {
+      private Rect cellRect2GridRect(RectInt cellRect) {
          return new Rect(originPos + (Vector2)cellRect.min * unit * yCorrectOne, (Vector2)cellRect.size * unit * yCorrectOne);
-      }
-
-      private void reCalcBoardMap() {
-         cachedBoardMap = forceRemakeCachedBoardMap();
-         ghostBoxRect = null;
-         prevDownCell = null;
       }
 
       private void validateMouseCell() {
@@ -447,59 +439,72 @@ DO_WORK:
       private void showPointerInfo() {
          EditorGUI.LabelField(GUILayoutUtility.GetRect(scrollSafeWidth, EditorGUIUtility.singleLineHeight), (curMouseCell?.ToString() ?? "null //") + $" {pointerTarget}, {pointerStatus}");
 
-         if (boardMapDirty) {
+         if (boardMapDirty != Dirtyness.None) {
             // boardMap의 정보가 outdated라서 없는 Axis를 참조하려고 할 수 있음.
             return;
          }
 
          if (style == null) {
             style = new GUIStyle(GUI.skin.box);
+            style.normal.textColor = Color.white;
          }
 
          string curHoveringAfCode = null;
+         int curHoveringIndex = -1;
          if (curMouseCell.HasValue && cachedBoardMap != null) {
             Vector2Int cellArrayCoord = curMouseCell.Value - boardMin;
             CompoInfo? hoveringCompoInfo;
             if ((hoveringCompoInfo = cachedBoardMap[cellArrayCoord.x, cellArrayCoord.y]) != null) {
-               var curHoveringCompo = compos.GetArrayElementAtIndex(hoveringCompoInfo.Value.indexInBoardList);
-               curHoveringAfCode = curHoveringCompo.FindPropertyRelative("_afforder").FindPropertyRelative("_code").stringValue;
+               curHoveringIndex = hoveringCompoInfo.Value.indexInBoardList;
+               var curHoveringCompoProperty = this.compos.GetArrayElementAtIndex(curHoveringIndex);
+               curHoveringAfCode = curHoveringCompoProperty.FindPropertyRelative("_afforder").FindPropertyRelative("_code").stringValue;
             }
          }
 
          if (curHoveringAfCode != null) {
-            float minWid, maxWid;
+            string toShow = $"{curHoveringIndex}: {curHoveringAfCode}";
 
-            style.CalcMinMaxWidth(new GUIContent(curHoveringAfCode), out minWid, out maxWid);
+            this.style.CalcMinMaxWidth(new GUIContent(toShow), out _, out float maxWid);
             var labelBack = new Rect(Event.current.mousePosition - Vector2.up * EditorGUIUtility.singleLineHeight,
                            new Vector2(maxWid + 10, EditorGUIUtility.singleLineHeight));
             EditorGUI.DrawRect(labelBack, Color.black);
-            GUI.Box(labelBack, curHoveringAfCode, style);
+            GUI.Box(labelBack, toShow, style);
          }
       }
 
       private void editCompo() {
-         if (curHotCompoInfo == null) {
-            return;
-         }
-
-         EditorGUILayout.Space(10);
+         EditorGUILayout.Space(10, true);
          EditorGUI.DrawRect(GUILayoutUtility.GetRect(scrollSafeWidth, 3), highlightCol);
-         EditorGUILayout.Space(10);
+         EditorGUILayout.Space(10, true);
 
-         var compoType = curHotCompoTypeName;
-         if (compoType == nameof(PassiveAxis) || compoType == nameof(ActiveAxis)) {
-            EditorGUILayout.PropertyField(curHotCompoProperty.FindPropertyRelative("_afforder").FindPropertyRelative("_code"));
-         }
-         if (compoType == nameof(Wire)) {
-            //
+         if (curHotCompoInfo != null) {
+            var compoType = curHotCompoTypeName;
+            if (compoType == nameof(PassiveAxis) || compoType == nameof(ActiveAxis)) {
+               try {
+                  EditorGUILayout.HelpBox($"{nameof(Afforder)}을 생성하고 싶지 않다면 코드를 빈 칸 또는 공백으로", MessageType.Info, false);
+               }
+               catch { }
+               EditorGUILayout.PropertyField(curHotCompoProperty.FindPropertyRelative("_afforder").FindPropertyRelative("_code"));
+            }
+            if (compoType == nameof(Wire)) {
+               //
+            }
          }
       }
 
-      private CompoInfo?[,] forceRemakeCachedBoardMap() {
-         var compoIndexMap = new CompoInfo?[boardSize.x, boardSize.y];
+      private void forceRemakeBoardCache(Dirtyness dirtyness) {
+         var newBoardMap = new CompoInfo?[boardSize.x, boardSize.y];
+         var newDrawList = new List<DrawInfo>();
+
          for (int idx = 0; idx < compos.arraySize; idx++) {
             SerializedProperty compo = compos.GetArrayElementAtIndex(idx);
             var cRect = compo.FindPropertyRelative("_rect").rectIntValue;
+            string compoTypeName = compo.managedReferenceFullTypename.Split('.').Last();
+            newDrawList.Add(new DrawInfo(cRect, compoTypeName, compo));
+            if (!dirtyness.HasFlag(Dirtyness.Grid)) {
+               continue;
+            }
+
             //minx, miny가 0인 상태로 만들어주기 (배열)
             cRect.x -= boardMin.x;
             cRect.y -= boardMin.y;
@@ -507,12 +512,12 @@ DO_WORK:
             for (int xx = cRect.min.x; xx < cRect.max.x; xx++) {
                for (int yy = cRect.min.y; yy < cRect.max.y; yy++) {
                   try {
-                     if (compoIndexMap[xx, yy] != null) {
+                     if (newBoardMap[xx, yy] != null) {
                         Debug.LogWarning($"({xx}, {yy})에서 겹침 있는 것 같음...");
                      }
-                     compoIndexMap[xx, yy] = new CompoInfo() {
+                     newBoardMap[xx, yy] = new CompoInfo() {
                         indexInBoardList = idx,
-                        typeName = compo.managedReferenceFullTypename.Split('.').Last()
+                        typeName = compoTypeName
                      };
                   }
                   catch (IndexOutOfRangeException) {
@@ -521,7 +526,10 @@ DO_WORK:
                }
             }
          }
-         return compoIndexMap;
+         cachedBoardMap = newBoardMap;
+         cachedDrawList = newDrawList;
+         ghostBoxRect = null;
+         prevDownCell = null;
       }
 
       private bool isValidRectForCompoIdx(RectInt targetRect, int? compoIdx) {
@@ -547,14 +555,58 @@ DO_WORK:
       }
 
       private struct CompoInfo {
+         public int indexInBoardList;
+         public string typeName;
 
          public CompoInfo(int _indexInBoardList, string _typeName) {
             indexInBoardList = _indexInBoardList;
             typeName = _typeName;
          }
+      }
 
-         public int indexInBoardList;
-         public string typeName;
+      private struct DrawInfo {
+         private static readonly Color activeAxisCol = new Color(1, 1, 1, 0.6f);
+         private static readonly Color passiveAxisCol = new Color(0, 0, 0, 0.6f);
+
+         private RectInt compoRect;
+         private string compoTypeName;
+         private SerializedProperty compo;
+
+         public DrawInfo(RectInt compoRect, string compoTypeName, SerializedProperty compo) {
+            this.compoRect = compoRect;
+            this.compoTypeName = compoTypeName;
+            this.compo = compo;
+         }
+
+         public Rect getGridRect(CariBoardEditor board) {
+            return board.cellRect2GridRect(compoRect);
+         }
+
+         public Color getColor() {
+            if (boardMapDirty != Dirtyness.None) {
+               // Compo가 이미 삭제되어 개 짜증나는 에러가 뜰 수 있서요
+               return Color.clear;
+            }
+
+            Color drawColor;
+
+            if (compoTypeName == nameof(PassiveAxis)) {
+               drawColor = passiveAxisCol;
+            }
+            else if (compoTypeName == nameof(ActiveAxis)) {
+               drawColor = activeAxisCol;
+            }
+            else {
+               drawColor = Color.clear;
+            }
+
+            string afforderCode = compo?.FindPropertyRelative("_afforder")?.FindPropertyRelative("_code")?.stringValue ?? null;
+            if (afforderCode != null && afforderCode.StartsWith("PRIME")) {
+               drawColor = Color.cyan;
+            }
+
+            return drawColor;
+         }
       }
 
       public void OnEnable() {
@@ -564,7 +616,9 @@ DO_WORK:
          creatingCompoType = serializedObject.FindProperty("_creatingCompoType");
          curHotCompoInfo = null;
          style = null;
-         reCalcBoardMap();
+         cachedBoardMap = null;
+         cachedDrawList = null;
+         boardMapDirty = Dirtyness.Full;
       }
 
       public override bool RequiresConstantRepaint() => true;

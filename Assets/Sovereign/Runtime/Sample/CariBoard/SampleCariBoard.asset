@@ -12,4 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 73038c8a3ca00fc47bda2a4fabb62676, type: 3}
   m_Name: SampleCariBoard
   m_EditorClassIdentifier: 
-  fdsa: 0
+  _boardRect:
+    x: -2
+    y: -2
+    width: 5
+    height: 5
+  _compos: []
+  _cellSize: 10
+  _creatingCompoType: 1
+  references:
+    version: 1

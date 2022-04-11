@@ -10,6 +10,10 @@ namespace NoFS.DayLight.CariBoard {
 
       [SerializeField]
       private CompoType _creatingCompoType;
+
+      public void invalidateBoardMap() {
+         _cachedBoardMap = null;
+      }
    }
 } 
 #endif

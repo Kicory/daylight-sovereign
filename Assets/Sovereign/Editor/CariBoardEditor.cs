@@ -352,7 +352,7 @@ DO_WORK:
          GUILayout.Label(" ", GUILayout.Width(scrollSafeWidth / 4));
          if (GUILayout.Button("Refresh", GUILayout.Width(scrollSafeWidth / 4))) {
             boardMapDirty = Dirtyness.Full;
-            (target as Board).cachedBoardMap = null;
+            (target as Board).invalidateBoardMap();
          }
          EditorGUILayout.EndHorizontal();
          EditorGUIUtility.labelWidth = 0;
@@ -402,7 +402,7 @@ DO_WORK:
          }
 
          foreach (DrawInfo draw in cachedDrawList) {
-            EditorGUI.DrawRect(draw.getGridRect(this), draw.getColor());
+            draw.draw(this);
          }
       }
 
@@ -578,11 +578,11 @@ DO_WORK:
             this.compo = compo;
          }
 
-         public Rect getGridRect(CariBoardEditor board) {
+         private Rect getGridRect(CariBoardEditor board) {
             return board.cellRect2GridRect(compoRect);
          }
 
-         public Color getColor() {
+         private Color getColor() {
             if (boardMapDirty != Dirtyness.None) {
                // Compo가 이미 삭제되어 개 짜증나는 에러가 뜰 수 있서요
                return Color.clear;
@@ -606,6 +606,10 @@ DO_WORK:
             }
 
             return drawColor;
+         }
+
+         public void draw(CariBoardEditor boardEditor) {
+            EditorGUI.DrawRect(getGridRect(boardEditor), getColor());
          }
       }
 

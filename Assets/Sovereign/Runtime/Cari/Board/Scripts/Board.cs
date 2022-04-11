@@ -18,27 +18,18 @@ namespace NoFS.DayLight.CariBoard {
 
       private Compo this[int xx, int yy] => cachedBoardMap[xx - boardRect.xMin, yy - boardRect.yMin];
 
+      [NonSerialized]
+      private Compo[,] _cachedBoardMap = null;
+
       /// <summary>저장되어 있는 <see cref="Compo"/>들을 바탕으로 계산된 board 위 <see cref="Compo"/>들의 위치. </summary>
-      public Compo[,] cachedBoardMap {
-#if UNITY_EDITOR
-         private
-#endif
+      private Compo[,] cachedBoardMap {
          get {
             if (_cachedBoardMap == null) {
                _cachedBoardMap = makeCachedBoardMap();
             }
             return _cachedBoardMap;
          }
-#if UNITY_EDITOR
-         set {
-            Debug.Assert(value == null, "널로 만드는 것만 허용함. 널로 만들겠음");
-            _cachedBoardMap = null;
-         }
-#endif
       }
-
-      [NonSerialized]
-      private Compo[,] _cachedBoardMap = null;
 
       /// <summary> 런타임에만 사용하는 함수 </summary>
       private Compo[,] makeCachedBoardMap() {
@@ -65,45 +56,40 @@ namespace NoFS.DayLight.CariBoard {
 
       #region MOVE
 
-      public ActiveAxis tryMoveFrom(Compo fromCompo, Vector2 direction) {
+      public ActiveAxis tryProjectionFrom(Compo fromCompo, Vector2 direction) {
 #if INDEV
          Debug.Assert(_compos.Contains(fromCompo), $"Board에 없는 {nameof(Compo)}가 fromCompo로 지정되었음");
 #endif
          var dirVector = Vector2Int.RoundToInt(direction.normalized);
-         if (!(dirVector.x == 0 ^ dirVector.y == 0)) {
+         if (dirVector.x != 0 ^ dirVector.y != 0) {
             //둘 다 0이거나 둘 이상의 input
             return null;
          }
 
-         int step;
-         int startSearch;
-         int endSearch;
+         int mainStep;
+         int startMainSearch;
+         int endMainSearch;
+         //PassiveAxis로 막혔을 경우 그 뒤로는 도달 못하는 매커니즘
+         HashSet<int> excludedSubSearch = new HashSet<int>();
          RectInt fromRect = fromCompo.rect;
+
+         //세로 방향 찾기
          if (dirVector.y != 0) {
-            //세로 방향 찾기
-            step = dirVector.y;
-            startSearch = step == 1 ? fromRect.yMax : fromRect.yMin - 1;
-            endSearch = step == 1 ? boardRect.yMax : boardRect.yMin - 1;
+            mainStep = dirVector.y;
+            startMainSearch = mainStep == 1 ? fromRect.yMax : fromRect.yMin - 1;
+            endMainSearch = mainStep == 1 ? boardRect.yMax : boardRect.yMin - 1;
 
-            for (int yy = startSearch; yy * step < endSearch * step; yy += step) {
+            for (int yy = startMainSearch; yy * mainStep < endMainSearch * mainStep; yy += mainStep) {
+               //좌에서 우로 훑기 (정석)
                for (int xx = fromRect.xMin; xx < fromRect.xMax; xx++) {
-                  //좌에서 우로 훑기 (정석)
-                  if (this[xx, yy] is ActiveAxis axis) {
-                     return axis;
+                  if (excludedSubSearch.Contains(xx))
+                     continue;
+                  
+                  if (this[xx, yy] is PassiveAxis) {
+                     excludedSubSearch.Add(xx);
+                     continue;
                   }
-               }
-            }
-            return null;
-         }
-         if (dirVector.x != 0) {
-            //가로 방향 찾기
-            step = dirVector.x;
-            startSearch = step == 1 ? fromRect.xMax : fromRect.xMin - 1;
-            endSearch = step == 1 ? boardRect.xMax : boardRect.xMin - 1;
 
-            for (int xx = startSearch; xx * step < endSearch * step; xx += step) {
-               for (int yy = fromRect.yMax - 1; yy >= fromRect.yMin; yy--) {
-                  //위에서 아래로 훑기 (정석)
                   if (this[xx, yy] is ActiveAxis axis) {
                      return axis;
                   }
@@ -111,8 +97,34 @@ namespace NoFS.DayLight.CariBoard {
             }
             return null;
          }
+         //가로 방향 찾기
+         if (dirVector.x != 0) {
+            mainStep = dirVector.x;
+            startMainSearch = mainStep == 1 ? fromRect.xMax : fromRect.xMin - 1;
+            endMainSearch = mainStep == 1 ? boardRect.xMax : boardRect.xMin - 1;
+
+            for (int xx = startMainSearch; xx * mainStep < endMainSearch * mainStep; xx += mainStep) {
+               //위에서 아래로 훑기 (정석)
+               for (int yy = fromRect.yMax - 1; yy >= fromRect.yMin; yy--) {
+                  if (excludedSubSearch.Contains(yy))
+                     continue;
+
+                  if (this[xx, yy] is PassiveAxis) {
+                     excludedSubSearch.Add(yy);
+                     continue;
+                  }
+
+                  if (this[xx, yy] is ActiveAxis axis) {
+                     return axis;
+                  }
+               }
+            }
+            return null;
+         }
+#if INDEV
          //이미 모든 케이스를 다 처리했음...
          Debug.Assert(false);
+#endif
          return null;
       }
 

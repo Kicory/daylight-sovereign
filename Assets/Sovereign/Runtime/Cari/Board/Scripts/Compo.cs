@@ -49,17 +49,4 @@ namespace NoFS.DayLight.CariBoard {
       public ActiveAxis(RectInt _rect, Afforder _afforder) : base(_rect, _afforder) {
       }
    }
-
-   [Serializable]
-   public class Afforder {
-
-      [SerializeField]
-      private string _code;
-
-      public string code => _code;
-
-      public Afforder(string code) {
-         this._code = code;
-      }
-   }
 }

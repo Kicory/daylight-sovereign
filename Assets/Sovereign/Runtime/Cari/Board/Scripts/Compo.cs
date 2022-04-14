@@ -19,12 +19,13 @@ namespace NoFS.DayLight.CariBoard {
    }
 
    [Serializable]
-   public abstract class Axis : Compo {
+   public abstract partial class Axis : Compo {
 
-      [SerializeField]
+      [SerializeReference]
       private Afforder _afforder;
 
       public Afforder afforder => _afforder;
+      public Afforder.Type afType => afforder.type();
       public string afforderCode => afforder?.code ?? null;
 
       public Axis(RectInt _rect, Afforder _afforder) {
@@ -49,4 +50,11 @@ namespace NoFS.DayLight.CariBoard {
       public ActiveAxis(RectInt _rect, Afforder _afforder) : base(_rect, _afforder) {
       }
    }
+
+#if UNITY_EDITOR
+   public abstract partial class Axis {
+      [SerializeField]
+      Afforder.Type _afType = Afforder.Type.Empty;
+   }
+#endif
 }

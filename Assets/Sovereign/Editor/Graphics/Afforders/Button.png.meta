@@ -1,19 +1,10 @@
 fileFormatVersion: 2
-guid: 5473d6e260c881a4c845afcaa0430703
+guid: 2e05d45b63dcb2a438726b21371209d3
 TextureImporter:
   internalIDToNameTable:
   - first:
       213: 7482667652216324306
-    second: Square_0
-  - first:
-      213: 7502894752496598917
-    second: Square_1
-  - first:
-      213: 8623377449436965134
-    second: Square_2
-  - first:
-      213: -6991059544506654955
-    second: Square_3
+    second: Square
   externalObjects: {}
   serializedVersion: 11
   mipmaps:
@@ -54,12 +45,12 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 2
+  spriteMode: 1
   spriteExtrude: 0
-  spriteMeshType: 1
+  spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 15
+  spritePixelsToUnits: 10
   spriteBorder: {x: 4, y: 4, z: 4, w: 4}
   spriteGenerateFallbackPhysicsShape: 0
   alphaUsage: 1
@@ -93,7 +84,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 0
+    textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -124,19 +115,31 @@ TextureImporter:
     overridden: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Server
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Square_0
+      name: Square
       rect:
         serializedVersion: 2
         x: 0
-        y: 15
-        width: 15
-        height: 15
-      alignment: 6
-      pivot: {x: 0, y: 0}
+        y: 0
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -144,69 +147,6 @@ TextureImporter:
       bones: []
       spriteID: 2d009a6b596c7d760800000000000000
       internalID: 7482667652216324306
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Square_1
-      rect:
-        serializedVersion: 2
-        x: 15
-        y: 15
-        width: 15
-        height: 15
-      alignment: 6
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 58fb3bd7603af1860800000000000000
-      internalID: 7502894752496598917
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Square_2
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 0
-        width: 15
-        height: 15
-      alignment: 6
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: e09edc50a146ca770800000000000000
-      internalID: 8623377449436965134
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Square_3
-      rect:
-        serializedVersion: 2
-        x: 15
-        y: 0
-        width: 15
-        height: 15
-      alignment: 6
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 51f931e6264cafe90800000000000000
-      internalID: -6991059544506654955
       vertices: []
       indices: 
       edges: []
@@ -226,10 +166,7 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      Square_0: 7482667652216324306
-      Square_2: 8623377449436965134
-      Square_1: 7502894752496598917
-      Square_3: -6991059544506654955
+      Square: 7482667652216324306
   spritePackingTag: 
   pSDRemoveMatte: 0
   pSDShowRemoveMatteOption: 0

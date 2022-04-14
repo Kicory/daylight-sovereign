@@ -37,6 +37,9 @@ namespace NoFS.DayLight.CariBoardEditor {
       private SerializedProperty creatingCompoType;
 
       private const float pad = 100f;
+      private const string _afforderPath = "_afforder";
+      private const string _afTypePath = "_afType";
+
       private float unit => cellSize.floatValue;
       private readonly Vector2Int yCorrectOne = new Vector2Int(1, -1);
       private readonly Color gridCol = new Color(1f, 1f, 1f, 0.1f);
@@ -120,7 +123,6 @@ namespace NoFS.DayLight.CariBoardEditor {
             forceRemakeBoardCache(boardMapDirty);
             boardMapDirty = Dirtyness.None;
          }
-
       }
 
       private void handlePointerEvent() {
@@ -244,10 +246,10 @@ DO_WORK:
                string creatingTypeName = creatingCompoTypeName;
                object creatingRef = null;
                if (creatingTypeName == nameof(PassiveAxis)) {
-                  creatingRef = new PassiveAxis(newCompoRect, new Afforder("Passive"));
+                  creatingRef = new PassiveAxis(newCompoRect, null);
                }
                else if (creatingTypeName == nameof(ActiveAxis)) {
-                  creatingRef = new ActiveAxis(newCompoRect, new Afforder("Active"));
+                  creatingRef = new ActiveAxis(newCompoRect, null);
                }
                else if (creatingTypeName == nameof(Wire)) {
                }
@@ -457,18 +459,15 @@ DO_WORK:
             if ((hoveringCompoInfo = cachedBoardMap[cellArrayCoord.x, cellArrayCoord.y]) != null) {
                curHoveringIndex = hoveringCompoInfo.Value.indexInBoardList;
                var curHoveringCompoProperty = this.compos.GetArrayElementAtIndex(curHoveringIndex);
-               curHoveringAfCode = curHoveringCompoProperty.FindPropertyRelative("_afforder").FindPropertyRelative("_code").stringValue;
+               curHoveringAfCode = curHoveringCompoProperty.FindPropertyRelative(_afforderPath)?.FindPropertyRelative("_code")?.stringValue ?? null;
+
+               string toShow = $"{curHoveringIndex}" + (curHoveringAfCode == null ? "" : $": {curHoveringAfCode}");
+               this.style.CalcMinMaxWidth(new GUIContent(toShow), out _, out float maxWid);
+               var labelBack = new Rect(Event.current.mousePosition - Vector2.up * EditorGUIUtility.singleLineHeight,
+                              new Vector2(maxWid + 10, EditorGUIUtility.singleLineHeight));
+               EditorGUI.DrawRect(labelBack, Color.black);
+               GUI.Box(labelBack, toShow, style);
             }
-         }
-
-         if (curHoveringAfCode != null) {
-            string toShow = $"{curHoveringIndex}: {curHoveringAfCode}";
-
-            this.style.CalcMinMaxWidth(new GUIContent(toShow), out _, out float maxWid);
-            var labelBack = new Rect(Event.current.mousePosition - Vector2.up * EditorGUIUtility.singleLineHeight,
-                           new Vector2(maxWid + 10, EditorGUIUtility.singleLineHeight));
-            EditorGUI.DrawRect(labelBack, Color.black);
-            GUI.Box(labelBack, toShow, style);
          }
       }
 
@@ -480,14 +479,45 @@ DO_WORK:
          if (curHotCompoInfo != null) {
             var compoType = curHotCompoTypeName;
             if (compoType == nameof(PassiveAxis) || compoType == nameof(ActiveAxis)) {
-               try {
-                  EditorGUILayout.HelpBox($"{nameof(Afforder)}을 생성하고 싶지 않다면 코드를 빈 칸 또는 공백으로", MessageType.Info, false);
-               }
-               catch { }
-               EditorGUILayout.PropertyField(curHotCompoProperty.FindPropertyRelative("_afforder").FindPropertyRelative("_code"));
+               editAxis();
             }
-            if (compoType == nameof(Wire)) {
+            else if (compoType == nameof(Wire)) {
                //
+            }
+         }
+      }
+
+      private void editAxis() {
+         SerializedProperty afType = curHotCompoProperty.FindPropertyRelative(_afTypePath);
+         int oldAfType = afType.enumValueIndex;
+         Afforder.Type newAfType;
+
+         EditorGUI.BeginChangeCheck();
+         EditorGUILayout.PropertyField(afType);
+         if (EditorGUI.EndChangeCheck()) {
+            newAfType = (Afforder.Type)Enum.GetValues(typeof(Afforder.Type)).GetValue(afType.enumValueIndex);
+            switch (newAfType) {
+               case Afforder.Type.NA:
+                  // 유효하지 않은 선택이므로 되돌림
+                  afType.enumValueIndex = oldAfType;
+                  Debug.LogWarning($"{nameof(newAfType)}은 만들 수 없음");
+                  break;
+               case Afforder.Type.Empty:
+                  curHotCompoProperty.FindPropertyRelative(_afforderPath).managedReferenceValue = null;
+                  break;
+               default:
+                  System.Reflection.ConstructorInfo constructorInfo = newAfType.type().GetConstructor(new Type[] { typeof(string) });
+                  curHotCompoProperty.FindPropertyRelative(_afforderPath).managedReferenceValue = constructorInfo.Invoke(new object[] { "NEW" });
+                  break;
+            }
+         }
+
+         if (curHotCompoProperty.FindPropertyRelative(_afforderPath).managedReferenceValue != null) {
+            SerializedProperty _property = curHotCompoProperty.FindPropertyRelative(_afforderPath);
+            var e = _property.GetEnumerator();
+            while (e.MoveNext()) {
+               SerializedProperty cur = e.Current as SerializedProperty;
+               EditorGUILayout.PropertyField(cur);
             }
          }
       }
@@ -566,7 +596,7 @@ DO_WORK:
 
       private struct DrawInfo {
          private static readonly Color activeAxisCol = new Color(1, 1, 1, 0.6f);
-         private static readonly Color passiveAxisCol = new Color(0, 0, 0, 0.6f);
+         private static readonly Color passiveAxisCol = new Color(1, 0, 0, 0.6f);
 
          private RectInt compoRect;
          private string compoTypeName;
@@ -600,7 +630,7 @@ DO_WORK:
                drawColor = Color.clear;
             }
 
-            string afforderCode = compo?.FindPropertyRelative("_afforder")?.FindPropertyRelative("_code")?.stringValue ?? null;
+            string afforderCode = compo?.FindPropertyRelative(_afforderPath)?.FindPropertyRelative("_code")?.stringValue ?? null;
             if (afforderCode != null && afforderCode.StartsWith("PRIME")) {
                drawColor = Color.cyan;
             }
@@ -609,7 +639,43 @@ DO_WORK:
          }
 
          public void draw(CariBoardEditor boardEditor) {
-            EditorGUI.DrawRect(getGridRect(boardEditor), getColor());
+            Color baseCol;
+            Texture2D tex;
+            var compoRef = compo.managedReferenceValue;
+            if (compoRef is Axis axis) {
+               if (axis is ActiveAxis) {
+                  baseCol = activeAxisCol;
+               }
+               else if (axis is PassiveAxis) {
+                  baseCol = passiveAxisCol;
+               }
+               else {
+                  baseCol = Color.white;
+               }
+
+               switch (axis.afType) {
+                  case Afforder.Type.Button:
+                     tex = EditorGUIUtility.FindTexture("Assets/Sovereign/Editor/Graphics/Afforders/Button.png");
+                     //tex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Sovereign/Editor/Graphics/Afforders/Button.png");
+                     Debug.Log(tex);
+                     break;
+                  default:
+                     tex = null;
+                     break;
+               }
+            }
+            else {
+               baseCol = Color.white;
+               tex = null;
+            }
+
+
+            if (tex == null) {
+               EditorGUI.DrawRect(getGridRect(boardEditor), getColor());
+            }
+            else {
+               GUI.DrawTexture(getGridRect(boardEditor), tex, ScaleMode.StretchToFill, true, 0, baseCol, 0, 0);
+            }
          }
       }
 

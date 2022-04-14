@@ -36,8 +36,13 @@ namespace NoFS.DayLight.CariBoardEditor {
       private SerializedProperty creatingCompoType;
 
       private const float pad = 100f;
-      private const string _afforderPath = "_afforder";
-      private const string _afTypePath = "_afType";
+      private const string AfforderPath = "_afforder";
+      private const string AfTypePath = "_afType";
+#if PACKAGE_INDEV
+      private const string PathPrefix = "Assets/Sovereign";
+#else
+      private const string PathPrefix = "Packages/com.nofs.daylight.sovereign";
+#endif
 
       private float unit => cellSize.floatValue;
       private readonly Vector2Int yCorrectOne = new Vector2Int(1, -1);
@@ -458,7 +463,7 @@ DO_WORK:
             if ((hoveringCompoInfo = cachedBoardMap[cellArrayCoord.x, cellArrayCoord.y]) != null) {
                curHoveringIndex = hoveringCompoInfo.Value.indexInBoardList;
                var curHoveringCompoProperty = this.compos.GetArrayElementAtIndex(curHoveringIndex);
-               curHoveringAfCode = curHoveringCompoProperty.FindPropertyRelative(_afforderPath)?.FindPropertyRelative("_code")?.stringValue ?? null;
+               curHoveringAfCode = curHoveringCompoProperty.FindPropertyRelative(AfforderPath)?.FindPropertyRelative("_code")?.stringValue ?? null;
 
                string toShow = $"{curHoveringIndex}" + (curHoveringAfCode == null ? "" : $": {curHoveringAfCode}");
                this.style.CalcMinMaxWidth(new GUIContent(toShow), out _, out float maxWid);
@@ -487,7 +492,7 @@ DO_WORK:
       }
 
       private void editAxis() {
-         SerializedProperty afType = curHotCompoProperty.FindPropertyRelative(_afTypePath);
+         SerializedProperty afType = curHotCompoProperty.FindPropertyRelative(AfTypePath);
          int oldAfType = afType.enumValueIndex;
          Afforder.Type newAfType;
 
@@ -502,17 +507,17 @@ DO_WORK:
                   Debug.LogWarning($"{nameof(newAfType)}은 만들 수 없음");
                   break;
                case Afforder.Type.Empty:
-                  curHotCompoProperty.FindPropertyRelative(_afforderPath).managedReferenceValue = null;
+                  curHotCompoProperty.FindPropertyRelative(AfforderPath).managedReferenceValue = null;
                   break;
                default:
                   System.Reflection.ConstructorInfo constructorInfo = newAfType.type().GetConstructor(new Type[] { typeof(string) });
-                  curHotCompoProperty.FindPropertyRelative(_afforderPath).managedReferenceValue = constructorInfo.Invoke(new object[] { "NEW" });
+                  curHotCompoProperty.FindPropertyRelative(AfforderPath).managedReferenceValue = constructorInfo.Invoke(new object[] { "NEW" });
                   break;
             }
          }
 
-         if (curHotCompoProperty.FindPropertyRelative(_afforderPath).managedReferenceValue != null) {
-            SerializedProperty _property = curHotCompoProperty.FindPropertyRelative(_afforderPath);
+         if (curHotCompoProperty.FindPropertyRelative(AfforderPath).managedReferenceValue != null) {
+            SerializedProperty _property = curHotCompoProperty.FindPropertyRelative(AfforderPath);
             var e = _property.GetEnumerator();
             while (e.MoveNext()) {
                SerializedProperty cur = e.Current as SerializedProperty;
@@ -595,7 +600,7 @@ DO_WORK:
 
       private struct DrawInfo {
          private static readonly Color activeAxisCol = new Color(1, 1, 1, 0.6f);
-         private static readonly Color passiveAxisCol = new Color(1, 0, 0, 0.6f);
+         private static readonly Color passiveAxisCol = new Color(0.3f, 0.3f, 0.3f, 0.5f);
 
          private RectInt compoRect;
          private string compoTypeName;
@@ -625,7 +630,7 @@ DO_WORK:
                drawColor = Color.clear;
             }
 
-            string afforderCode = compo?.FindPropertyRelative(_afforderPath)?.FindPropertyRelative("_code")?.stringValue ?? null;
+            string afforderCode = compo?.FindPropertyRelative(AfforderPath)?.FindPropertyRelative("_code")?.stringValue ?? null;
             if (afforderCode != null && afforderCode.StartsWith("PRIME")) {
                drawColor = Color.cyan;
             }
@@ -641,11 +646,6 @@ DO_WORK:
 
             Color baseCol;
             Texture2D tex;
-#if PACKAGE_INDEV
-            string texPath = "Assets/Sovereign";
-#else
-            string texPath = "Packages/com.nofs.daylight.sovereign";
-#endif
 
             var compoRef = compo.managedReferenceValue;
             if (compoRef is Axis axis) {
@@ -661,9 +661,7 @@ DO_WORK:
 
                switch (axis.afType) {
                   case Afforder.Type.Button:
-                     //tex = EditorGUIUtility.FindTexture($"{texPath}/Editor/Graphics/Afforders/Button.png");
-                     tex = AssetDatabase.LoadAssetAtPath<Texture2D>($"{texPath}/Editor/Graphics/Afforders/Button.png");
-                     Debug.Log(tex);
+                     tex = AssetDatabase.LoadAssetAtPath<Texture2D>($"{PathPrefix}/Editor/Graphics/Afforders/Button.png");
                      break;
                   default:
                      tex = null;

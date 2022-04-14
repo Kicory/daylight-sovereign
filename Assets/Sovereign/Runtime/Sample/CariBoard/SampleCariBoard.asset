@@ -19,8 +19,9 @@ MonoBehaviour:
     height: 5
   _compos:
   - rid: 5556322953956950036
+  - rid: 5556322953956950057
   _cellSize: 57.03
-  _creatingCompoType: 1
+  _creatingCompoType: 2
   references:
     version: 2
     RefIds:
@@ -28,14 +29,30 @@ MonoBehaviour:
       type: {class: PassiveAxis, ns: NoFS.DayLight.CariBoard, asm: NoFS.DayLight.Sovereign}
       data:
         _rect:
-          x: 2
-          y: 1
-          width: 1
+          x: 0
+          y: 0
+          width: 2
           height: 2
         _afforder:
-          rid: 5556322953956950038
+          rid: 5556322953956950060
         _afType: 1
-    - rid: 5556322953956950038
+    - rid: 5556322953956950057
+      type: {class: ActiveAxis, ns: NoFS.DayLight.CariBoard, asm: NoFS.DayLight.Sovereign}
+      data:
+        _rect:
+          x: -1
+          y: 0
+          width: 1
+          height: 1
+        _afforder:
+          rid: 5556322953956950061
+        _afType: 1
+    - rid: 5556322953956950060
+      type: {class: ButtonAF, ns: NoFS.DayLight.CariBoard, asm: NoFS.DayLight.Sovereign}
+      data:
+        _code: NEW
+        signalDuration: 1
+    - rid: 5556322953956950061
       type: {class: ButtonAF, ns: NoFS.DayLight.CariBoard, asm: NoFS.DayLight.Sovereign}
       data:
         _code: NEW

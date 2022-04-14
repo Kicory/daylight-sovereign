@@ -29,7 +29,6 @@ namespace NoFS.DayLight.CariBoardEditor {
       private Vector2 scrollPos { get; set; } = Vector2.zero;
       private GUIStyle style = null;
       private string creatingCompoTypeName => creatingCompoType?.enumNames[creatingCompoType.enumValueIndex] ?? null;
-      private bool showAllCompos = false;
 
       private SerializedProperty boardRect;
       private SerializedProperty cellSize;
@@ -641,6 +640,12 @@ DO_WORK:
          public void draw(CariBoardEditor boardEditor) {
             Color baseCol;
             Texture2D tex;
+#if PACKAGE_INDEV
+            string texPath = "Assets/Sovereign";
+#else
+            string texPath = "Packages/com.nofs.daylight.sovereign";
+#endif
+
             var compoRef = compo.managedReferenceValue;
             if (compoRef is Axis axis) {
                if (axis is ActiveAxis) {
@@ -655,7 +660,7 @@ DO_WORK:
 
                switch (axis.afType) {
                   case Afforder.Type.Button:
-                     tex = EditorGUIUtility.FindTexture("Assets/Sovereign/Editor/Graphics/Afforders/Button.png");
+                     tex = EditorGUIUtility.FindTexture($"{texPath}/Editor/Graphics/Afforders/Button.png");
                      //tex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Sovereign/Editor/Graphics/Afforders/Button.png");
                      Debug.Log(tex);
                      break;

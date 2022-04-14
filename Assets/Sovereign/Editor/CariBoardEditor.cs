@@ -612,10 +612,6 @@ DO_WORK:
          }
 
          private Color getColor() {
-            if (boardMapDirty != Dirtyness.None) {
-               // Compo가 이미 삭제되어 개 짜증나는 에러가 뜰 수 있서요
-               return Color.clear;
-            }
 
             Color drawColor;
 
@@ -638,6 +634,11 @@ DO_WORK:
          }
 
          public void draw(CariBoardEditor boardEditor) {
+            if (boardMapDirty != Dirtyness.None) {
+               // Compo가 이미 삭제되어 개 짜증나는 에러가 뜰 수 있서요
+               return;
+            }
+
             Color baseCol;
             Texture2D tex;
 #if PACKAGE_INDEV

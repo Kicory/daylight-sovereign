@@ -660,8 +660,8 @@ DO_WORK:
 
                switch (axis.afType) {
                   case Afforder.Type.Button:
-                     tex = EditorGUIUtility.FindTexture($"{texPath}/Editor/Graphics/Afforders/Button.png");
-                     //tex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Sovereign/Editor/Graphics/Afforders/Button.png");
+                     //tex = EditorGUIUtility.FindTexture($"{texPath}/Editor/Graphics/Afforders/Button.png");
+                     tex = AssetDatabase.LoadAssetAtPath<Texture2D>($"{texPath}/Editor/Graphics/Afforders/Button.png");
                      Debug.Log(tex);
                      break;
                   default:

@@ -77,7 +77,11 @@ namespace NoFS.DayLight.Sovereign {
       private RenderTexture svrnTargetTexture;
 
       [ShowNativeProperty]
+#pragma warning disable UNT0007 // Null coalescing on Unity objects
+#pragma warning disable UNT0008 // Null propagation on Unity objects
       private RenderTexture svrnTargetTextureShower => camera?.camera?.targetTexture ?? null;
+#pragma warning restore UNT0008 // Null propagation on Unity objects
+#pragma warning restore UNT0007 // Null coalescing on Unity objects
 
       public void updateLayer() {
          try {

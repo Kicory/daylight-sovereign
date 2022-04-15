@@ -13,47 +13,13 @@ MonoBehaviour:
   m_Name: SampleCariBoard
   m_EditorClassIdentifier: 
   _boardRect:
-    x: -2
-    y: -2
-    width: 5
-    height: 5
-  _compos:
-  - rid: 5556322953956950036
-  - rid: 5556322953956950057
-  _cellSize: 57.03
-  _creatingCompoType: 2
+    x: -7
+    y: -7
+    width: 15
+    height: 15
+  _compos: []
+  _cellSize: 29.8
+  _creatingCompoType: 3
   references:
     version: 2
-    RefIds:
-    - rid: 5556322953956950036
-      type: {class: PassiveAxis, ns: NoFS.DayLight.CariBoard, asm: NoFS.DayLight.Sovereign}
-      data:
-        _rect:
-          x: 0
-          y: 0
-          width: 2
-          height: 2
-        _afforder:
-          rid: 5556322953956950060
-        _afType: 1
-    - rid: 5556322953956950057
-      type: {class: ActiveAxis, ns: NoFS.DayLight.CariBoard, asm: NoFS.DayLight.Sovereign}
-      data:
-        _rect:
-          x: -1
-          y: 0
-          width: 1
-          height: 1
-        _afforder:
-          rid: 5556322953956950061
-        _afType: 1
-    - rid: 5556322953956950060
-      type: {class: ButtonAF, ns: NoFS.DayLight.CariBoard, asm: NoFS.DayLight.Sovereign}
-      data:
-        _code: NEW
-        signalDuration: 1
-    - rid: 5556322953956950061
-      type: {class: ButtonAF, ns: NoFS.DayLight.CariBoard, asm: NoFS.DayLight.Sovereign}
-      data:
-        _code: NEW
-        signalDuration: 1
+    RefIds: []

@@ -6,11 +6,11 @@ using UnityEngine;
 namespace NoFS.DayLight.Sovereign.Cari {
    public class SampleCariInstance : CariInstance {
       [SerializeField]
-      public Board board;
+      private Board board;
 
       [Button]
       public void doWhatever() {
-         foreach(Compo c in board["PRIME"]) {
+         foreach(Afforder c in board.findAll("PRIME")) {
             Debug.Log(c.GetType().Name);
          }
       }

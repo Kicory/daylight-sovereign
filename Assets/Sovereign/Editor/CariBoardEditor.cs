@@ -12,7 +12,7 @@ namespace NoFS.DayLight.CariBoardEditor {
 
       private enum PointerTarget {
          None,
-         Axis,
+         Compo,
          Empty
       }
 
@@ -44,7 +44,7 @@ namespace NoFS.DayLight.CariBoardEditor {
       private const string PathPrefix = "Packages/com.nofs.daylight.sovereign";
 #endif
 
-      private float unit => cellSize.floatValue;
+      public float unit => Mathf.Round(cellSize.floatValue / 2) * 2;
       private readonly Vector2Int yCorrectOne = new Vector2Int(1, -1);
       private readonly Color gridCol = new Color(1f, 1f, 1f, 0.1f);
       private readonly Color highlightCol = new Color(1f, 1f, 1f, 0.1f);
@@ -74,7 +74,7 @@ namespace NoFS.DayLight.CariBoardEditor {
       }
 
       private int? curHotCompoIdx => curHotCompoInfo?.indexInBoardList ?? null;
-      private string curHotCompoTypeName => curHotCompoInfo?.typeName ?? null;
+      //private string curHotCompoTypeName => curHotCompoInfo?.typeName ?? null;
 
       private SerializedProperty curHotCompoProperty = null;
 
@@ -106,7 +106,7 @@ namespace NoFS.DayLight.CariBoardEditor {
          //Draw origin
          EditorGUI.DrawRect(new Rect(originPos, (Vector2)yCorrectOne * unit / 3), Color.red);
 
-         drawGhostBox(ghostCol);
+         drawSelectionGhostBox(ghostCol);
 
          EditorGUILayout.EndScrollView();
          // 스크롤 뷰 밖에서는 좌표계가 다르므로 grid board에 그리는 코드 쓰지 말 것!
@@ -133,7 +133,7 @@ namespace NoFS.DayLight.CariBoardEditor {
          PointerTarget prevPointerTarget;
          PointerStatus prevPointerStatus;
          Vector2Int cellCoordFromZero = Vector2Int.zero;
-         string compoType;
+         object compoRef;
          bool clickPerfomed = false;
          Vector2Int? prevPrevDownCell = null;
 
@@ -156,21 +156,12 @@ namespace NoFS.DayLight.CariBoardEditor {
          GUI.FocusControl(null);
 
          cellCoordFromZero = curMouseCell.Value - boardMin;
-         compoType = cachedBoardMap?[cellCoordFromZero.x, cellCoordFromZero.y]?.typeName ?? null;
+         compoRef = cachedBoardMap?[cellCoordFromZero.x, cellCoordFromZero.y]?.compoRef ?? null;
 
-         #region TODO
-
-         if (compoType == null) {
-            pointerTarget = PointerTarget.Empty;
-         }
-         else if (compoType == nameof(PassiveAxis) || compoType == nameof(ActiveAxis)) {
-            pointerTarget = PointerTarget.Axis;
-         }
-         else if (compoType == nameof(Wire)) {
-            pointerTarget = PointerTarget.Empty;
-         }
-
-         #endregion TODO
+         pointerTarget = compoRef switch {
+            Compo => PointerTarget.Compo,
+            _ => PointerTarget.Empty
+         };
 
          if (Event.current.isMouse) {
             switch (Event.current.type) {
@@ -213,7 +204,7 @@ DO_WORK:
          }
 
          if (clickPerfomed) {
-            if (pointerTarget == PointerTarget.Axis) {
+            if (pointerTarget == PointerTarget.Compo) {
                curHotCompoInfo = cachedBoardMap[cellCoordFromZero.x, cellCoordFromZero.y];
             }
             else if (pointerTarget == PointerTarget.Empty) {
@@ -256,6 +247,7 @@ DO_WORK:
                   creatingRef = new ActiveAxis(newCompoRect, null);
                }
                else if (creatingTypeName == nameof(Wire)) {
+                  creatingRef = new Wire(newCompoRect);
                }
                else {
                   //
@@ -371,6 +363,8 @@ DO_WORK:
 
          //그냥 배경용 박스
          GUI.Box(gridRect, "");
+         EditorGUI.DrawRect(gridRect, new Color(0.3f, 0.3f, 0.3f, 1));
+
          if (Event.current.type != EventType.Repaint) {
             //이 이후로는 어차피 Layout 등이 관여할 필요가 없음 (그리기만 하면 됨)
             return;
@@ -412,7 +406,7 @@ DO_WORK:
          }
       }
 
-      private void drawGhostBox(Color col) {
+      private void drawSelectionGhostBox(Color col) {
          if (Event.current.type != EventType.Repaint) {
             return;
          }
@@ -423,16 +417,21 @@ DO_WORK:
          if (!ghostBoxRect.HasValue) {
             return;
          }
-         var boxRect = cellRect2GridRect(ghostBoxRect.Value);
 
-         EditorGUI.DrawRect(new Rect(boxRect) { height = 3, y = boxRect.y - 1 }, col);
-         EditorGUI.DrawRect(new Rect(boxRect) { height = 3, y = boxRect.yMax - 1 }, col);
-         EditorGUI.DrawRect(new Rect(boxRect) { width = 3, x = boxRect.x - 1 }, col);
-         EditorGUI.DrawRect(new Rect(boxRect) { width = 3, x = boxRect.xMax - 1 }, col);
+         drawGhostBox(ghostBoxRect.Value, col);
+      }
+
+      private void drawGhostBox(RectInt cellRect, Color col, float wid = 3) {
+         var gridRect = cellRect2GridRect(cellRect);
+
+         EditorGUI.DrawRect(new Rect(gridRect) { height = wid, y = gridRect.y, x = gridRect.x + wid, width = gridRect.width - (wid * 2) }, col);
+         EditorGUI.DrawRect(new Rect(gridRect) { height = wid, y = gridRect.yMax - wid, width = gridRect.width - wid }, col);
+         EditorGUI.DrawRect(new Rect(gridRect) { width = wid, x = gridRect.x, height = gridRect.height - wid}, col);
+         EditorGUI.DrawRect(new Rect(gridRect) { width = wid, x = gridRect.xMax - wid }, col);
       }
 
       private Rect cellRect2GridRect(RectInt cellRect) {
-         return new Rect(originPos + (Vector2)cellRect.min * unit * yCorrectOne, (Vector2)cellRect.size * unit * yCorrectOne);
+         return new Rect(originPos + new Vector2(cellRect.xMin, cellRect.yMax) * unit * yCorrectOne, (Vector2)cellRect.size * unit);
       }
 
       private void validateMouseCell() {
@@ -455,8 +454,8 @@ DO_WORK:
             style.normal.textColor = Color.white;
          }
 
-         string curHoveringAfCode = null;
-         int curHoveringIndex = -1;
+         string curHoveringAfCode;
+         int curHoveringIndex;
          if (curMouseCell.HasValue && cachedBoardMap != null) {
             Vector2Int cellArrayCoord = curMouseCell.Value - boardMin;
             CompoInfo? hoveringCompoInfo;
@@ -481,12 +480,13 @@ DO_WORK:
          EditorGUILayout.Space(10, true);
 
          if (curHotCompoInfo != null) {
-            var compoType = curHotCompoTypeName;
-            if (compoType == nameof(PassiveAxis) || compoType == nameof(ActiveAxis)) {
-               editAxis();
-            }
-            else if (compoType == nameof(Wire)) {
-               //
+            object compoRef = curHotCompoInfo.Value.compoRef;
+            switch (compoRef) {
+               case Axis:
+                  editAxis();
+                  break;
+               default:
+                  break;
             }
          }
       }
@@ -533,8 +533,8 @@ DO_WORK:
          for (int idx = 0; idx < compos.arraySize; idx++) {
             SerializedProperty compo = compos.GetArrayElementAtIndex(idx);
             var cRect = compo.FindPropertyRelative("_rect").rectIntValue;
-            string compoTypeName = compo.managedReferenceFullTypename.Split('.').Last();
-            newDrawList.Add(new DrawInfo(cRect, compoTypeName, compo));
+            object compoRef = compo.managedReferenceValue;
+            newDrawList.Add(new DrawInfo(cRect, compo));
             if (!dirtyness.HasFlag(Dirtyness.Grid)) {
                continue;
             }
@@ -551,7 +551,7 @@ DO_WORK:
                      }
                      newBoardMap[xx, yy] = new CompoInfo() {
                         indexInBoardList = idx,
-                        typeName = compoTypeName
+                        compoRef = compoRef
                      };
                   }
                   catch (IndexOutOfRangeException) {
@@ -590,25 +590,24 @@ DO_WORK:
 
       private struct CompoInfo {
          public int indexInBoardList;
-         public string typeName;
+         public object compoRef;
 
-         public CompoInfo(int _indexInBoardList, string _typeName) {
+         public CompoInfo(int _indexInBoardList, object _compoRef) {
             indexInBoardList = _indexInBoardList;
-            typeName = _typeName;
+            compoRef = _compoRef;
          }
       }
 
       private struct DrawInfo {
-         private static readonly Color activeAxisCol = new Color(1, 1, 1, 0.6f);
-         private static readonly Color passiveAxisCol = new Color(0.3f, 0.3f, 0.3f, 0.5f);
+         private static readonly Color activeAxisCol = new Color(1, 1, 1, 1f);
+         private static readonly Color passiveAxisCol = new Color(0.2f, 0.2f, 0.2f, 1f);
+         private static readonly Color wireCol = new Color(0.7f, 0.7f, 1f, 1);
 
-         private RectInt compoRect;
-         private string compoTypeName;
-         private SerializedProperty compo;
+         public RectInt compoRect;
+         public SerializedProperty compo;
 
-         public DrawInfo(RectInt compoRect, string compoTypeName, SerializedProperty compo) {
+         public DrawInfo(RectInt compoRect, SerializedProperty compo) {
             this.compoRect = compoRect;
-            this.compoTypeName = compoTypeName;
             this.compo = compo;
          }
 
@@ -616,27 +615,68 @@ DO_WORK:
             return board.cellRect2GridRect(compoRect);
          }
 
-         private Color getColor() {
+         private Color getTintColor() {
+            var compoRef = compo.managedReferenceValue;
 
-            Color drawColor;
-
-            if (compoTypeName == nameof(PassiveAxis)) {
-               drawColor = passiveAxisCol;
-            }
-            else if (compoTypeName == nameof(ActiveAxis)) {
-               drawColor = activeAxisCol;
-            }
-            else {
-               drawColor = Color.clear;
-            }
+            Color tintCol = compoRef switch {
+               ActiveAxis => activeAxisCol,
+               PassiveAxis => passiveAxisCol,
+               Wire => wireCol,
+               _ => Color.white,
+            };
 
             string afforderCode = compo?.FindPropertyRelative(AfforderPath)?.FindPropertyRelative("_code")?.stringValue ?? null;
             if (afforderCode != null && afforderCode.StartsWith("PRIME")) {
-               drawColor = Color.cyan;
+               tintCol = Color.cyan;
             }
 
-            return drawColor;
+            return tintCol;
          }
+
+         /// <summary>
+         /// 그릴 텍스쳐가 있는지 찾기
+         /// </summary>
+         /// <returns>텍스쳐 없으면 null 리턴</returns>
+         private Texture2D getTexture() {
+            var compoRef = compo.managedReferenceValue;
+
+            Texture2D tex;
+            if (compoRef is Axis axis) {
+               tex = axis.afType switch {
+                  Afforder.Type.Empty or
+                  Afforder.Type.SquareButton or 
+                  Afforder.Type.VerticalSwitch => AssetDatabase.LoadAssetAtPath<Texture2D>($"{PathPrefix}/Editor/Graphics/Afforders/{axis.afType}.png"),
+                  _ => null,
+               };
+            }
+            else if (compoRef is Wire) {
+               string wireVariant;
+               if (compoRect.width > compoRect.height) {
+                  wireVariant = "Hor";
+               }
+               else if (compoRect.width < compoRect.height) {
+                  wireVariant = "Ver";
+               }
+               else {
+                  wireVariant = "Dot";
+               }
+               tex = AssetDatabase.LoadAssetAtPath<Texture2D>($"{PathPrefix}/Editor/Graphics/Wire/{wireVariant}.png");
+            }
+            else {
+               tex = null;
+            }
+            return tex;
+         }
+
+         private bool drawBorderBox() => compo.managedReferenceValue switch {
+            Wire => false,
+            _ => true
+         };
+
+         private ScaleMode drawScaleMode() => compo.managedReferenceValue switch {
+            Wire => ScaleMode.StretchToFill,
+            _ => ScaleMode.ScaleToFit
+         };
 
          public void draw(CariBoardEditor boardEditor) {
             if (boardMapDirty != Dirtyness.None) {
@@ -644,41 +684,18 @@ DO_WORK:
                return;
             }
 
-            Color baseCol;
             Texture2D tex;
-
-            var compoRef = compo.managedReferenceValue;
-            if (compoRef is Axis axis) {
-               if (axis is ActiveAxis) {
-                  baseCol = activeAxisCol;
-               }
-               else if (axis is PassiveAxis) {
-                  baseCol = passiveAxisCol;
-               }
-               else {
-                  baseCol = Color.white;
-               }
-
-               switch (axis.afType) {
-                  case Afforder.Type.Button:
-                     tex = AssetDatabase.LoadAssetAtPath<Texture2D>($"{PathPrefix}/Editor/Graphics/Afforders/Button.png");
-                     break;
-                  default:
-                     tex = null;
-                     break;
+            if ((tex = getTexture()) != null) {
+               //텍스쳐가 있는 경우
+               Color tintCol = getTintColor();
+               GUI.DrawTexture(getGridRect(boardEditor), tex, drawScaleMode(), true, 0, tintCol, 0, 0);
+               if (drawBorderBox()) {
+                  boardEditor.drawGhostBox(compoRect, tintCol, Mathf.Max(2, boardEditor.unit / 10));
                }
             }
             else {
-               baseCol = Color.white;
-               tex = null;
-            }
-
-
-            if (tex == null) {
-               EditorGUI.DrawRect(getGridRect(boardEditor), getColor());
-            }
-            else {
-               GUI.DrawTexture(getGridRect(boardEditor), tex, ScaleMode.StretchToFill, true, 0, baseCol, 0, 0);
+               //없는 경우 (색깔로만 그림)
+               EditorGUI.DrawRect(getGridRect(boardEditor), getTintColor());
             }
          }
       }

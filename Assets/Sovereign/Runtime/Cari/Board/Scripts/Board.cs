@@ -19,22 +19,48 @@ namespace NoFS.DayLight.CariBoard {
       private Compo this[int xx, int yy] => cachedBoardMap[xx - boardRect.xMin, yy - boardRect.yMin];
 
       [NonSerialized]
+      private bool hasValidCache = false;
+
+      [NonSerialized]
       private Compo[,] _cachedBoardMap = null;
+
+      [NonSerialized]
+      private List<Afforder> _cachedAfforders = null;
 
       /// <summary>저장되어 있는 <see cref="Compo"/>들을 바탕으로 계산된 board 위 <see cref="Compo"/>들의 위치. </summary>
       private Compo[,] cachedBoardMap {
          get {
-            if (_cachedBoardMap == null) {
-               _cachedBoardMap = makeCachedBoardMap();
+            if (!hasValidCache) {
+               validateBoardCaches();
             }
             return _cachedBoardMap;
          }
       }
 
+      private List<Afforder> cachedAfforders {
+         get {
+            if (!hasValidCache) {
+               validateBoardCaches();
+            }
+            return _cachedAfforders;
+         }
+      }
+
       /// <summary> 런타임에만 사용하는 함수 </summary>
-      private Compo[,] makeCachedBoardMap() {
-         var ret = new Compo[_boardRect.width, _boardRect.height];
+      private void validateBoardCaches() {
+         var newBoardMapCache = new Compo[_boardRect.width, _boardRect.height];
+         _cachedAfforders ??= new List<Afforder> ();
+         _cachedAfforders.Clear();
+
          foreach (Compo compo in _compos) {
+            if (compo is Axis axis && axis.afType != Afforder.Type.Empty) {
+               _cachedAfforders.Add(axis.afforder);
+            }
+            else {
+               // _compos와 index를 맞추기 위해서...
+               _cachedAfforders.Add(null);
+            }
+
             var cRect = compo.rect;
 
             //minx, miny가 0인 상태로 만들어주기
@@ -43,15 +69,19 @@ namespace NoFS.DayLight.CariBoard {
 
             for (int xx = cRect.min.x; xx < cRect.max.x; xx++) {
                for (int yy = cRect.min.y; yy < cRect.max.y; yy++) {
-                  ret[xx, yy] = compo;
+                  newBoardMapCache[xx, yy] = compo;
                }
             }
          }
-         return ret;
+
+         _cachedBoardMap = newBoardMapCache;
+         hasValidCache = true;
       }
 
       public Compo this[int idx] => _compos[idx];
-      public List<Compo> this[string AfCode] => string.IsNullOrWhiteSpace(AfCode) ? null : _compos.FindAll((c) => c is Axis axis && (axis.afforder?.code?.Equals(AfCode) ?? false));
+      public Afforder findFirst(string afCode) => _cachedAfforders.Find((af) => af?.code?.Equals(afCode) ?? false);
+      public List<Afforder> findAll(string afCode) => _cachedAfforders.FindAll((af) => af?.code?.Equals(afCode) ?? false);
+      public List<Afforder> findStartsWith(string afCodePrefix) => _cachedAfforders.FindAll((af) => af?.code?.StartsWith(afCodePrefix) ?? false);
       public IEnumerable<T> getComposOfType<T>() where T : Compo => _compos.OfType<T>();
 
       #region MOVE

@@ -36,7 +36,7 @@ TagManager:
   - 
   - 
   - 
-  - 
+  - SvrnLayer_Dense
   - SvrnLayer
   m_SortingLayers:
   - name: Default

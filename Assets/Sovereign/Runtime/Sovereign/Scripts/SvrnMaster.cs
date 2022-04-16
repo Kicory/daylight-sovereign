@@ -1,4 +1,6 @@
-﻿using Cysharp.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.Rendering.PostProcessing;
@@ -10,10 +12,15 @@ namespace NoFS.DayLight.Sovereign {
    [AddComponentMenu("Sovereign/Sovereign Master")]
    public partial class SvrnMaster : MonoBehaviour {
 
+      public enum Channel {
+         Base,
+         Dense
+      };
+
       /// <summary>
       /// 현재 Sovereign 상태
       /// </summary>
-      public enum SvrnStatus { Idle = 0, Running = 10 }
+      public enum SvrnStatus { Idle = 0, Running = 1 }
 
       /// <summary>
       /// 씬에서 항상 하나뿐인 <see cref="SvrnMaster"/>.
@@ -24,11 +31,11 @@ namespace NoFS.DayLight.Sovereign {
 
       public SvrnStatus status { get; private set; } = SvrnStatus.Idle;
 
-      public SvrnBoard board { get; private set; }
+      private Dictionary<Channel, SvrnBoard> boards;
+      
+      private Dictionary<Channel, SvrnCam> cameras;
 
-      public new SvrnCam camera { get; private set; }
-
-      public PostProcessVolume PPV => camera.postProcessVolume;
+      private Dictionary<Channel, PostProcessVolume> PPVs;
 
       public static async UniTask<SvrnResult> startSvrn(SvrnInstance svrnInst) {
          return await inst.startSvrnInternal(svrnInst);
@@ -44,68 +51,62 @@ namespace NoFS.DayLight.Sovereign {
             };
          }
          status = SvrnStatus.Running;
-         board.cleanUpBoard();
+         cleanUpBoards();
          var result = await svrnInst.svrnSequence(master: this);
-         board.cleanUpBoard();
+         cleanUpBoards();
          status = SvrnStatus.Idle;
          return result;
       }
 
-      public MeshManager getMeshManagerInstance() {
-         GameObject meshMangerObject = board.addMeshManagerObject();
+      public MeshManager getMeshManagerInstance(Channel channel) {
+         GameObject meshMangerObject = boards[channel].addMeshManagerObject();
          return meshMangerObject.GetComponent<MeshManager>();
       }
 
-      public TSetting getPPSetting<TSetting>() where TSetting : PostProcessEffectSettings {
-         return PPV?.profile.GetSetting<TSetting>() ?? null;
+      public TSetting getPPSetting<TSetting>(Channel channel) where TSetting : PostProcessEffectSettings {
+         return PPVs[channel]?.profile.GetSetting<TSetting>() ?? null;
       }
 
-      private void Awake() {
-         board = GetComponentInChildren<SvrnBoard>();
-         camera = GetComponentInChildren<SvrnCam>();
+      private void cleanUpBoards() {
+         foreach(var b in boards.Values) {
+            b.cleanUpBoard();
+         }
       }
-   }
+
+      private void Start() {
+         boards = new Dictionary<Channel, SvrnBoard>();
+         cameras = new Dictionary<Channel, SvrnCam>();
+         PPVs = new Dictionary<Channel, PostProcessVolume>();
+
+         foreach (Channel channel in Enum.GetValues(typeof(Channel))) {
+            Transform channelHolder = transform.Find($"{channel}");
+            if (channelHolder != null) {
+               string channelLayerName = $"{channel}Svrn";
+#if INDEV
+               if (LayerMask.NameToLayer(channelLayerName) == -1) {
+                  Debug.LogError($"Sovereign package requires Layer named: {channelLayerName}. Sovereign will not work.");
+                  continue;
+               } 
+#endif
+               SvrnBoard board = channelHolder.GetComponentInChildren<SvrnBoard>();
+               board.setLayer(channelLayerName);
+               this.boards.Add(channel, board);
+
+               SvrnCam cam = channelHolder.GetComponentInChildren<SvrnCam>();
+               cam.setLayer(channelLayerName);
+               PPVs.Add(channel, cam.postProcessVolume);
+               this.cameras.Add(channel, cam);
+            }
+         }
+      }
 
 #if UNITY_EDITOR
-
-   public partial class SvrnMaster {
-
-      [InfoBox("Svrn 전용 레이어 설정 (필수!!)", EInfoBoxType.Error), HorizontalLine, SerializeField, Layer, OnValueChanged("updateLayer")]
-      private string svrnLayer;
-
-      [InfoBox("Svrn 전용 렌더 텍스쳐 설졍 (필수!!)", EInfoBoxType.Error), SerializeField, OnValueChanged("updateRenderTexture")]
-      private RenderTexture svrnTargetTexture;
-
-      [ShowNativeProperty]
-#pragma warning disable UNT0007 // Null coalescing on Unity objects
-#pragma warning disable UNT0008 // Null propagation on Unity objects
-      private RenderTexture svrnTargetTextureShower => camera?.camera?.targetTexture ?? null;
-#pragma warning restore UNT0008 // Null propagation on Unity objects
-#pragma warning restore UNT0007 // Null coalescing on Unity objects
-
-      public void updateLayer() {
-         try {
-            if (UnityEditor.PrefabUtility.IsPartOfImmutablePrefab(gameObject) == false) {
-               gameObject.layer = LayerMask.NameToLayer(svrnLayer);
-               camera.setLayer(svrnLayer);
-               board.setLayer(svrnLayer);
-               UnityEditor.PrefabUtility.ApplyPrefabInstance(this.gameObject, UnityEditor.InteractionMode.AutomatedAction);
-            }
+      [Button("Toggle Visible")]
+      private void toggleHide() {
+         foreach (Transform t in transform) {
+            t.hideFlags = t.hideFlags != HideFlags.None ? HideFlags.None : HideFlags.HideInHierarchy;
          }
-         catch (System.ArgumentException) { }
-      }
-
-      public void updateRenderTexture() {
-         try {
-            if (UnityEditor.PrefabUtility.IsPartOfImmutablePrefab(gameObject) == false) {
-               camera.camera.targetTexture = svrnTargetTexture;
-               GetComponentInChildren<RawImage>().texture = svrnTargetTexture;
-               UnityEditor.PrefabUtility.ApplyPrefabInstance(this.gameObject, UnityEditor.InteractionMode.AutomatedAction);
-            }
-         }
-         catch (System.ArgumentException) { }
-      }
-   }
-
+      } 
 #endif
+   }
 }

@@ -20,6 +20,7 @@ namespace NoFS.DayLight.Sovereign {
 
       public GameObject addMeshManagerObject() {
          GameObject meshManagerObject = Instantiate(meshManagerPrefab, rtf, false);
+         meshManagerObject.layer = gameObject.layer;
          this.boardComponents.Add(meshManagerObject);
          return meshManagerObject;
       }
@@ -38,21 +39,11 @@ namespace NoFS.DayLight.Sovereign {
          svrnVC = GetComponentInChildren<CinemachineVirtualCamera>();
       }
 
-#if UNITY_EDITOR
-
-      public void setLayer(string svrnLayer) {
-         gameObject.layer = LayerMask.NameToLayer(svrnLayer);
-         if (meshManagerPrefab != null) {
-            meshManagerPrefab.layer = LayerMask.NameToLayer(svrnLayer);
-         }
-         else {
-            Debug.LogWarning($"{nameof(SvrnBoard)}에 {nameof(MeshManager)} 프리팹 넣어야 함.");
-         }
+      public void setLayer(string layerName) {
+         gameObject.layer = LayerMask.NameToLayer(layerName);
          foreach (Transform chgo in rtf) {
-            chgo.gameObject.layer = LayerMask.NameToLayer(svrnLayer);
+            chgo.gameObject.layer = LayerMask.NameToLayer(layerName);
          }
       }
-
-#endif
    }
 }

@@ -17,14 +17,10 @@ namespace NoFS.DayLight.Sovereign {
          postProcessVolume = GetComponent<PostProcessVolume>();
       }
 
-#if UNITY_EDITOR
-
-      public void setLayer(string mask) {
-         gameObject.layer = LayerMask.NameToLayer(mask);
-         camera.cullingMask = LayerMask.GetMask(mask);
-         postProcessLayer.volumeLayer = LayerMask.GetMask(mask);
+      public void setLayer(string layerName) {
+         gameObject.layer = LayerMask.NameToLayer(layerName);
+         camera.cullingMask = LayerMask.GetMask(layerName);
+         postProcessLayer.volumeLayer = LayerMask.GetMask(layerName);
       }
-
-#endif
    }
 }

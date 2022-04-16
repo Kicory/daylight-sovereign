@@ -23,7 +23,7 @@ namespace NoFS.DayLight.Sovereign.Sample {
          var cts_vertexWaver = getCancelableTokenSource();
          var token = cts.Token;
 
-         var meshHelper = new MeshHelper(master);
+         var meshHelper = new MeshHelper(master, SvrnMaster.Channel.Base);
          var mesh = meshHelper.manager.prepareMeshPlaying(materials);
 
          // Delaunator 사용할 거임

@@ -35,9 +35,9 @@ TagManager:
   - 
   - 
   - 
+  - BaseSvrn
+  - DenseSvrn
   - 
-  - SvrnLayer_Dense
-  - SvrnLayer
   m_SortingLayers:
   - name: Default
     uniqueID: 0

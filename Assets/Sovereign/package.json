@@ -1,10 +1,10 @@
 {
     "name": "com.nofs.daylight.sovereign",
-    "version": "0.0.9",
+    "version": "0.0.10",
     "displayName": "Sovereign Package",
-    "description": "소버린 개발을 다른 곳에서 하려구 만듦",
+    "description": "Modularizing Sovereign development",
     "unity": "2021.3",
-    "unityRelease": "0f1",
+    "unityRelease": "8f1",
     "documentationUrl": "https://github.com/Kicory/daylight-sovereign",
     "changelogUrl": "https://github.com/Kicory/daylight-sovereign",
     "licensesUrl": "https://github.com/Kicory/daylight-sovereign",
@@ -12,9 +12,12 @@
       "com.dbrizov.naughtyattributes": "2.1.4",
       "com.nol1fe.delaunator": "1.0.9",
       "com.unity.postprocessing": "3.2.2",
-      "com.unity.cinemachine": "2.8.4",
+      "com.unity.cinemachine": "2.8.6",
+      "com.unity.timeline": "1.6.4",
       "com.cysharp.unitask": "2.3.1",
-      "com.unity.ugui": "1.0.0"
+      "com.unity.ugui": "1.0.0",
+      "com.unity.inputsystem": "1.4.1",
+      "com.unity.textmeshpro": "3.0.6"
    },
    "keywords": [
       "daylight"

@@ -18,8 +18,8 @@ MonoBehaviour:
     width: 15
     height: 15
   _compos: []
-  _cellSize: 29.8
-  _creatingCompoType: 3
+  _cellSize: 35.46
+  _creatingCompoType: 5
   references:
     version: 2
     RefIds: []

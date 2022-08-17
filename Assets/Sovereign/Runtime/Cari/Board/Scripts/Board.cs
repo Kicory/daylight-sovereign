@@ -24,9 +24,6 @@ namespace NoFS.DayLight.CariBoard {
       [NonSerialized]
       private Compo[,] _cachedBoardMap = null;
 
-      [NonSerialized]
-      private List<Afforder> _cachedAfforders = null;
-
       /// <summary>저장되어 있는 <see cref="Compo"/>들을 바탕으로 계산된 board 위 <see cref="Compo"/>들의 위치. </summary>
       private Compo[,] cachedBoardMap {
          get {
@@ -37,30 +34,11 @@ namespace NoFS.DayLight.CariBoard {
          }
       }
 
-      private List<Afforder> cachedAfforders {
-         get {
-            if (!hasValidCache) {
-               validateBoardCaches();
-            }
-            return _cachedAfforders;
-         }
-      }
-
       /// <summary> 런타임에만 사용하는 함수 </summary>
       private void validateBoardCaches() {
          var newBoardMapCache = new Compo[_boardRect.width, _boardRect.height];
-         _cachedAfforders ??= new List<Afforder> ();
-         _cachedAfforders.Clear();
-
+      
          foreach (Compo compo in _compos) {
-            if (compo is Axis axis && axis.afType != Afforder.Type.Empty) {
-               _cachedAfforders.Add(axis.afforder);
-            }
-            else {
-               // _compos와 index를 맞추기 위해서...
-               _cachedAfforders.Add(null);
-            }
-
             var cRect = compo.rect;
 
             //minx, miny가 0인 상태로 만들어주기
@@ -79,14 +57,13 @@ namespace NoFS.DayLight.CariBoard {
       }
 
       public Compo this[int idx] => _compos[idx];
-      public Afforder findFirst(string afCode) => _cachedAfforders.Find((af) => af?.code?.Equals(afCode) ?? false);
-      public List<Afforder> findAll(string afCode) => _cachedAfforders.FindAll((af) => af?.code?.Equals(afCode) ?? false);
-      public List<Afforder> findStartsWith(string afCodePrefix) => _cachedAfforders.FindAll((af) => af?.code?.StartsWith(afCodePrefix) ?? false);
+      public Compo findFirst(string compoId) => _compos.Find((compo) => !string.IsNullOrEmpty(compo.id) && compo.id.Equals(compoId));
+      public Axis findFirstAxis(string axisId) => _compos.Find((compo) => compo is Axis axis && !string.IsNullOrEmpty(axis.id) && axis.id.Equals(axisId)) as Axis;
       public IEnumerable<T> getComposOfType<T>() where T : Compo => _compos.OfType<T>();
 
       #region MOVE
 
-      public ActiveAxis tryProjectionFrom(Compo fromCompo, Vector2 direction) {
+      public Axis tryProjectionFrom(Compo fromCompo, Vector2 direction) {
 #if INDEV
          Debug.Assert(_compos.Contains(fromCompo), $"Board에 없는 {nameof(Compo)}가 fromCompo로 지정되었음");
 #endif
@@ -115,13 +92,14 @@ namespace NoFS.DayLight.CariBoard {
                   if (excludedSubSearch.Contains(xx))
                      continue;
                   
-                  if (this[xx, yy] is PassiveAxis) {
-                     excludedSubSearch.Add(xx);
-                     continue;
-                  }
-
-                  if (this[xx, yy] is ActiveAxis axis) {
-                     return axis;
+                  if (this[xx, yy] is Axis axis) {
+                     if (axis.blocking) {
+                        excludedSubSearch.Add(xx);
+                        continue;
+                     }
+                     else {
+                        return axis;
+                     }
                   }
                }
             }
@@ -139,14 +117,16 @@ namespace NoFS.DayLight.CariBoard {
                   if (excludedSubSearch.Contains(yy))
                      continue;
 
-                  if (this[xx, yy] is PassiveAxis) {
-                     excludedSubSearch.Add(yy);
-                     continue;
+                  if (this[xx, yy] is Axis axis) {
+                     if (axis.blocking) {
+                        excludedSubSearch.Add(yy);
+                        continue;
+                     }
+                     else {
+                        return axis;
+                     }
                   }
 
-                  if (this[xx, yy] is ActiveAxis axis) {
-                     return axis;
-                  }
                }
             }
             return null;

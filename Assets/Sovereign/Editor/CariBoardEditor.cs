@@ -36,8 +36,6 @@ namespace NoFS.DayLight.CariBoardEditor {
       private SerializedProperty creatingCompoType;
 
       private const float pad = 100f;
-      private const string AfforderPath = "_afforder";
-      private const string AfTypePath = "_afType";
 #if PACKAGE_INDEV
       private const string PathPrefix = "Assets/Sovereign";
 #else
@@ -238,24 +236,32 @@ DO_WORK:
             RectInt newCompoRect = ghostBoxRect.Value;
 
             if (isValidRectForCompoIdx(newCompoRect, nextIdx)) {
-               string creatingTypeName = creatingCompoTypeName;
+               CompoType creatingType = (CompoType)creatingCompoType.enumValueIndex;
                object creatingRef = null;
-               if (creatingTypeName == nameof(PassiveAxis)) {
-                  creatingRef = new PassiveAxis(newCompoRect, null);
-               }
-               else if (creatingTypeName == nameof(ActiveAxis)) {
-                  creatingRef = new ActiveAxis(newCompoRect, null);
-               }
-               else if (creatingTypeName == nameof(Wire)) {
-                  creatingRef = new Wire(newCompoRect);
-               }
-               else {
-                  //
+               switch (creatingType) {
+                  case CompoType.Wire:
+                     creatingRef = new Wire(newCompoRect);
+                     break;
+                  case CompoType.Axis:
+                     creatingRef = new Axis(newCompoRect, false);
+                     break;
+                  case CompoType.Afforder:
+                     creatingRef = new Afforder(newCompoRect, false, false);
+                     break;
+                  case CompoType.Container:
+                     creatingRef = new Container(newCompoRect, false, false);
+                     break;
+                  case CompoType.Forwarder:
+                     creatingRef = new Forwarder(newCompoRect, false);
+                     break;
+                  case CompoType.None:
+                     //
+                     break;
                }
                if (creatingRef != null) {
                   compos.InsertArrayElementAtIndex(nextIdx);
                   compos.GetArrayElementAtIndex(nextIdx).managedReferenceValue = creatingRef;
-                  curHotCompoInfo = new CompoInfo(nextIdx, creatingTypeName);
+                  curHotCompoInfo = new CompoInfo(nextIdx, creatingType.ToString());
                   boardMapDirty = Dirtyness.Full;
                }
             }
@@ -454,7 +460,7 @@ DO_WORK:
             style.normal.textColor = Color.white;
          }
 
-         string curHoveringAfCode;
+         string curHoverCompoId;
          int curHoveringIndex;
          if (curMouseCell.HasValue && cachedBoardMap != null) {
             Vector2Int cellArrayCoord = curMouseCell.Value - boardMin;
@@ -462,9 +468,9 @@ DO_WORK:
             if ((hoveringCompoInfo = cachedBoardMap[cellArrayCoord.x, cellArrayCoord.y]) != null) {
                curHoveringIndex = hoveringCompoInfo.Value.indexInBoardList;
                var curHoveringCompoProperty = this.compos.GetArrayElementAtIndex(curHoveringIndex);
-               curHoveringAfCode = curHoveringCompoProperty.FindPropertyRelative(AfforderPath)?.FindPropertyRelative("_code")?.stringValue ?? null;
+               curHoverCompoId = curHoveringCompoProperty?.FindPropertyRelative("_id")?.stringValue ?? null;
 
-               string toShow = $"{curHoveringIndex}" + (curHoveringAfCode == null ? "" : $": {curHoveringAfCode}");
+               string toShow = $"{curHoveringIndex}" + (string.IsNullOrEmpty(curHoverCompoId) ? "" : $": {curHoverCompoId}");
                this.style.CalcMinMaxWidth(new GUIContent(toShow), out _, out float maxWid);
                var labelBack = new Rect(Event.current.mousePosition - Vector2.up * EditorGUIUtility.singleLineHeight,
                               new Vector2(maxWid + 10, EditorGUIUtility.singleLineHeight));
@@ -492,37 +498,17 @@ DO_WORK:
       }
 
       private void editAxis() {
-         SerializedProperty afType = curHotCompoProperty.FindPropertyRelative(AfTypePath);
-         int oldAfType = afType.enumValueIndex;
-         Afforder.Type newAfType;
-
-         EditorGUI.BeginChangeCheck();
-         EditorGUILayout.PropertyField(afType);
-         if (EditorGUI.EndChangeCheck()) {
-            newAfType = (Afforder.Type)Enum.GetValues(typeof(Afforder.Type)).GetValue(afType.enumValueIndex);
-            switch (newAfType) {
-               case Afforder.Type.NA:
-                  // 유효하지 않은 선택이므로 되돌림
-                  afType.enumValueIndex = oldAfType;
-                  Debug.LogWarning($"{nameof(newAfType)}은 만들 수 없음");
-                  break;
-               case Afforder.Type.Empty:
-                  curHotCompoProperty.FindPropertyRelative(AfforderPath).managedReferenceValue = null;
-                  break;
-               default:
-                  System.Reflection.ConstructorInfo constructorInfo = newAfType.type().GetConstructor(new Type[] { typeof(string) });
-                  curHotCompoProperty.FindPropertyRelative(AfforderPath).managedReferenceValue = constructorInfo.Invoke(new object[] { "NEW" });
-                  break;
-            }
+         object mv = curHotCompoProperty.managedReferenceValue;
+         EditorGUILayout.LabelField(mv.GetType().Name, EditorStyles.boldLabel);
+         if (mv is Compo) {
+            EditorGUILayout.PropertyField(curHotCompoProperty.FindPropertyRelative("_id"));
+            //EditorGUILayout.PropertyField(curHotCompoProperty.FindPropertyRelative("_rect"));
          }
-
-         if (curHotCompoProperty.FindPropertyRelative(AfforderPath).managedReferenceValue != null) {
-            SerializedProperty _property = curHotCompoProperty.FindPropertyRelative(AfforderPath);
-            var e = _property.GetEnumerator();
-            while (e.MoveNext()) {
-               SerializedProperty cur = e.Current as SerializedProperty;
-               EditorGUILayout.PropertyField(cur);
-            }
+         if (mv is Axis) {
+            EditorGUILayout.PropertyField(curHotCompoProperty.FindPropertyRelative("_blocking"));
+         }
+         if (mv is Actor) {
+            EditorGUILayout.PropertyField(curHotCompoProperty.FindPropertyRelative("_locked"));
          }
       }
 
@@ -599,8 +585,8 @@ DO_WORK:
       }
 
       private struct DrawInfo {
-         private static readonly Color activeAxisCol = new Color(1, 1, 1, 1f);
-         private static readonly Color passiveAxisCol = new Color(0.2f, 0.2f, 0.2f, 1f);
+         private static readonly Color freeAxisCol = new Color(1, 1, 1, 1f);
+         private static readonly Color blockingAxisCol = new Color(0.2f, 0.2f, 0.2f, 1f);
          private static readonly Color wireCol = new Color(0.7f, 0.7f, 1f, 1);
 
          public RectInt compoRect;
@@ -619,16 +605,10 @@ DO_WORK:
             var compoRef = compo.managedReferenceValue;
 
             Color tintCol = compoRef switch {
-               ActiveAxis => activeAxisCol,
-               PassiveAxis => passiveAxisCol,
+               Axis axis => axis.blocking ? blockingAxisCol : freeAxisCol,
                Wire => wireCol,
                _ => Color.white,
             };
-
-            string afforderCode = compo?.FindPropertyRelative(AfforderPath)?.FindPropertyRelative("_code")?.stringValue ?? null;
-            if (afforderCode != null && afforderCode.StartsWith("PRIME")) {
-               tintCol = Color.cyan;
-            }
 
             return tintCol;
          }
@@ -642,11 +622,11 @@ DO_WORK:
 
             Texture2D tex;
             if (compoRef is Axis axis) {
-               tex = axis.afType switch {
-                  Afforder.Type.Empty or
-                  Afforder.Type.SquareButton or 
-                  Afforder.Type.VerticalSwitch => AssetDatabase.LoadAssetAtPath<Texture2D>($"{PathPrefix}/Editor/Graphics/Afforders/{axis.afType}.png"),
-                  _ => null,
+               tex = axis switch {
+                  Afforder => AssetDatabase.LoadAssetAtPath<Texture2D>($"{PathPrefix}/Editor/Graphics/Axis/Afforder.png"),
+                  Container => AssetDatabase.LoadAssetAtPath<Texture2D>($"{PathPrefix}/Editor/Graphics/Axis/Container.png"),
+                  Forwarder => AssetDatabase.LoadAssetAtPath<Texture2D>($"{PathPrefix}/Editor/Graphics/Axis/Forwarder.png"),
+                  _ => AssetDatabase.LoadAssetAtPath<Texture2D>($"{PathPrefix}/Editor/Graphics/Axis/Empty.png")
                };
             }
             else if (compoRef is Wire) {
